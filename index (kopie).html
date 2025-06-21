@@ -1,0 +1,2383 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developmenta - Kalkulačka developerského projektu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0066cc 0%, #004499 25%, #003366 50%, #001e3d 75%, #000a1a 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Glassmorphism backdrop elements */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 120px auto 0;
+            padding: 20px;
+        }
+
+        /* Enhanced Header with Auto-Hide */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            padding: 8px 0;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transform: translateY(0);
+        }
+
+        .header.hidden {
+            transform: translateY(-100%);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-right: 32px;
+        }
+
+        .nav-logo {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #000000;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .tabs {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 32px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex-grow: 1;
+            justify-content: center;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .tab {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 16px 24px;
+            color: #000000;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab.active {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #000000;
+            font-weight: 700;
+        }
+
+        .calculator-container {
+            background: transparent;
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .tab-content {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            display: block;
+            scroll-margin-top: 120px;
+        }
+
+        .tab-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+        }
+
+        .tab-content:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 12px 32px rgba(0, 0, 0, 0.08),
+                0 4px 16px rgba(0, 102, 204, 0.05);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Form Groups */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            color: #000000;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Tables */
+        .cost-table, .revenue-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cost-table th, .revenue-table th,
+        .cost-table td, .revenue-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #000000;
+        }
+
+        .cost-table th, .revenue-table th {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            color: #000000;
+        }
+
+        .cost-table input, .revenue-table input {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #000000;
+            padding: 8px 12px;
+            border-radius: 8px;
+            width: 100%;
+        }
+
+        /* Result Cards */
+        .result-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .result-card h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .result-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 8px 0;
+        }
+
+        .result-card .unit {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Sliders */
+        .slider-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .slider-container label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #ffffff;
+        }
+
+        .slider-container .slider-value {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        /* Summary sections */
+        .summary-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .summary-section h3 {
+            color: #ffffff;
+            margin-bottom: 16px;
+        }
+
+        .summary-section p,
+        .summary-section ul,
+        .summary-section li {
+            color: #ffffff;
+        }
+
+        /* Glass Tables */
+        .table-container {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #000000;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.08);
+            color: #000000;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            color: #000000;
+            font-variant-numeric: tabular-nums;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Glass Controls */
+        .controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin: 24px 0;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 8px 16px;
+        }
+
+        .control-group label {
+            color: #000000;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .control-group input[type="range"] {
+            width: 120px;
+            background: transparent;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-track {
+            background: rgba(255, 255, 255, 0.2);
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background: white;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-group input[type="range"]::-moz-range-track {
+            background: rgba(255, 255, 255, 0.2);
+            height: 4px;
+            border-radius: 2px;
+            border: none;
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            background: white;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .number {
+            text-align: right;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            color: #000000;
+        }
+
+        .risk-low { color: #059669; font-weight: 600; }
+        .risk-medium { color: #d97706; font-weight: 600; }
+        .risk-high { color: #dc2626; font-weight: 600; }
+
+        .summary-section table tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .risk-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .risk-item.high {
+            border-left-color: #ef4444;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+
+        .risk-item.medium {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+
+        .risk-item.low {
+            border-left-color: #10b981;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+
+        .risk-item h4 {
+            margin: 0 0 10px 0;
+            color: #000000;
+            font-size: 1.1em;
+        }
+
+        .risk-item p {
+            margin: 8px 0;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        /* Slider styling */
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e5e7eb;
+            outline: none;
+            margin: 10px 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-group span {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .summary-section {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 32px;
+            border-radius: 20px;
+            margin: 32px 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .section-icon {
+            margin-right: 8px;
+            font-size: 1.2rem;
+        }
+
+        /* Project Action Buttons */
+        .project-actions-section {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            margin: 20px 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .action-btn:active {
+            transform: translateY(0);
+        }
+
+        .action-btn-circle {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            padding: 0;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .action-btn-circle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .action-btn-circle:active {
+            transform: translateY(0);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+                gap: 12px;
+                padding: 12px 16px;
+            }
+            
+            .nav-links {
+                justify-content: center;
+                order: 2;
+            }
+            
+            .nav-actions {
+                order: 3;
+            }
+            
+            .nav-brand {
+                order: 1;
+            }
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 24px;
+            padding: 16px 0;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">        
+        <nav class="tabs" id="navbar">
+            <div class="nav-brand">
+                <img src="Developmenta logo.png" alt="Developmenta" class="nav-logo">
+                <span class="nav-title">Developmenta</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="#guide" class="tab active" onclick="scrollToSection('guide')">Návod</a>
+                <a href="#inputs" class="tab" onclick="scrollToSection('inputs')">Vstupy</a>
+                <a href="#costs" class="tab" onclick="scrollToSection('costs')">Náklady</a>
+                <a href="#revenues" class="tab" onclick="scrollToSection('revenues')">Příjmy</a>
+                <a href="#analysis" class="tab" onclick="scrollToSection('analysis')">Analýza</a>
+                <a href="#cashflow" class="tab" onclick="scrollToSection('cashflow')">Cashflow</a>
+                <a href="#sensitivity" class="tab" onclick="scrollToSection('sensitivity')">Citlivostní analýza</a>
+            </div>
+            
+            <div class="nav-actions">
+                <button class="action-btn-circle" onclick="saveProject()" title="Uložit projekt">💾</button>
+                <button class="action-btn-circle" onclick="loadProject()" title="Načíst projekt">📁</button>
+                <button class="action-btn-circle" onclick="exportToPDF()" title="Export do PDF">📄</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="main-container">
+        <div class="calculator-container">
+            <!-- Vstupní data Tab -->
+            <div id="inputs" class="tab-content active">
+                <div class="section-title">
+                    Pozemek a lokace
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Výměra pozemku (m²)</label>
+                        <input type="number" id="landArea" value="1500" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Kupní cena pozemku (Kč)</label>
+                        <input type="number" id="landPrice" value="25000000" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Koeficient zastavěnosti</label>
+                        <input type="number" id="buildingCoeff" value="0.4" step="0.1" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Maximální podlažnost</label>
+                        <input type="number" id="maxFloors" value="4" oninput="calculate()">
+                    </div>
+                </div>
+
+                <div class="section-title">
+                    Technické parametry
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Hrubá podlažní plocha (m²)</label>
+                        <input type="number" id="totalGFA" value="3200" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Standard výstavby</label>
+                        <select id="buildingStandard" onchange="calculate()">
+                            <option value="standard">Standard (25-35k Kč/m²)</option>
+                            <option value="premium" selected>Nadstandard (35-50k Kč/m²)</option>
+                            <option value="luxury">Luxus (50k+ Kč/m²)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Připojení inženýrských sítí</label>
+                        <select id="utilitiesConnection" onchange="calculate()">
+                            <option value="existing">Existujících připojení</option>
+                            <option value="partial" selected>Částečné připojení</option>
+                            <option value="new">Nové připojení</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Geologické podmínky</label>
+                        <select id="geologicalConditions" onchange="calculate()">
+                            <option value="good" selected>Dobré</option>
+                            <option value="medium">Průměrné</option>
+                            <option value="difficult">Složité</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-title">
+                    Architektonická studie
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>1+kk - počet bytů</label>
+                        <input type="number" id="units1kk" value="8" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>1+kk - průměrná plocha (m²)</label>
+                        <input type="number" id="area1kk" value="35" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>2+kk - počet bytů</label>
+                        <input type="number" id="units2kk" value="12" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>2+kk - průměrná plocha (m²)</label>
+                        <input type="number" id="area2kk" value="60" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>3+kk - počet bytů</label>
+                        <input type="number" id="units3kk" value="8" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>3+kk - průměrná plocha (m²)</label>
+                        <input type="number" id="area3kk" value="85" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Parkovací místa - počet</label>
+                        <input type="number" id="parkingSpaces" value="25" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Sklepy - počet</label>
+                        <input type="number" id="cellars" value="28" oninput="calculate()">
+                    </div>
+                </div>
+
+                <div class="section-title">
+                    Tržní ceny
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Cena 1+kk (Kč/m²)</label>
+                        <input type="number" id="price1kk" value="140000" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Cena 2+kk (Kč/m²)</label>
+                        <input type="number" id="price2kk" value="130000" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Cena 3+kk (Kč/m²)</label>
+                        <input type="number" id="price3kk" value="125000" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Cena parkovacího místa (Kč)</label>
+                        <input type="number" id="parkingPrice" value="350000" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Cena sklepa (Kč/m²)</label>
+                        <input type="number" id="cellarPrice" value="25000" oninput="calculate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Plocha sklepa (m²)</label>
+                        <input type="number" id="cellarArea" value="4" oninput="calculate()">
+                    </div>
+                </div>
+
+                <button class="calculate-btn" onclick="calculate()">
+                    <i class="fas fa-calculator"></i>
+                    Přepočítat projekt
+                </button>
+            </div>
+
+            <!-- Výpočet nákladů Tab -->
+            <div id="costs" class="tab-content">
+                <div class="section-title">
+                    Detailní rozpis nákladů
+                </div>
+                
+                <div class="table-container">
+                    <table id="costsTable">
+                        <thead>
+                            <tr>
+                                <th>Kategorie nákladů</th>
+                                <th>Částka</th>
+                            </tr>
+                        </thead>
+                        <tbody id="costsBody">
+                            <tr class="section-header">
+                                <td colspan="2"><strong>2.1 Náklady na pozemek</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Nákup pozemku</td>
+                                <td class="number" id="landCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Převodní náklady (4%)</td>
+                                <td class="number" id="landTransferCost">0 Kč</td>
+                            </tr>
+                            <tr class="section-header">
+                                <td colspan="2"><strong>2.2 Projektové náklady</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Architektonická studie</td>
+                                <td class="number" id="architecturalStudyCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Projektová dokumentace</td>
+                                <td class="number" id="projectDocumentationCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Inženýrské systémy</td>
+                                <td class="number" id="engineeringSystemsCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Statický projekt</td>
+                                <td class="number" id="structuralProjectCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Energetický audit</td>
+                                <td class="number" id="energyAuditCost">0 Kč</td>
+                            </tr>
+                            <tr class="section-header">
+                                <td colspan="2"><strong>2.3 Stavební náklady</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Stavba objektu</td>
+                                <td class="number" id="constructionCost">0 Kč</td>
+                            </tr>
+                            <tr class="section-header">
+                                <td colspan="2"><strong>2.4 Vedlejší náklady</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Připojení inženýrských sítí</td>
+                                <td class="number" id="utilitiesConnectionCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Terénní úpravy</td>
+                                <td class="number" id="landscapingCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Komunikace</td>
+                                <td class="number" id="communicationsCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Oplocení</td>
+                                <td class="number" id="fencingCost">0 Kč</td>
+                            </tr>
+                            <tr class="section-header">
+                                <td colspan="2"><strong>2.5 Administrativní náklady</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Stavební povolení</td>
+                                <td class="number" id="buildingPermitCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Technický dozor</td>
+                                <td class="number" id="inspectionCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Autorský dozor</td>
+                                <td class="number" id="supervisionCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Marketing a prodej</td>
+                                <td class="number" id="marketingCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Finanční náklady</td>
+                                <td class="number" id="financingCost">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Rezerva (8%)</td>
+                                <td class="number" id="contingencyCost">0 Kč</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td><strong>CELKEM</strong></td>
+                                <td class="number"><strong id="totalCostsTable">0 Kč</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="result-cards">
+                    <div class="result-card">
+                        <h4>Náklady na pozemek</h4>
+                        <p class="value" id="landCostsSummary">0 Kč</p>
+                    </div>
+                    <div class="result-card">
+                        <h4>Projektové náklady</h4>
+                        <p class="value" id="projectCostsSummary">0 Kč</p>
+                    </div>
+                    <div class="result-card">
+                        <h4>Stavební náklady</h4>
+                        <p class="value" id="constructionCostsSummary">0 Kč</p>
+                    </div>
+                    <div class="result-card">
+                        <h4>Administrativní náklady</h4>
+                        <p class="value" id="adminCostsSummary">0 Kč</p>
+                    </div>
+                    <div class="result-card positive">
+                        <h4>Celkové náklady</h4>
+                        <p class="value" id="totalCostsSummary">0 Kč</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Výpočet příjmů Tab -->
+            <div id="revenues" class="tab-content">
+                <div class="section-title">
+                    Detailní rozpis příjmů
+                </div>
+                
+                <div class="table-container">
+                    <table id="revenuesTable">
+                        <thead>
+                            <tr>
+                                <th>Kategorie příjmů</th>
+                                <th>Počet</th>
+                                <th>Plocha/kus</th>
+                                <th>Cena za m²/kus</th>
+                                <th>Celkem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="revenuesBody">
+                            <tr>
+                                <td>Byty 1+kk</td>
+                                <td class="number" id="revenue1kkUnits">0</td>
+                                <td class="number" id="revenue1kkArea">0 m²</td>
+                                <td class="number" id="revenue1kkPrice">0 Kč/m²</td>
+                                <td class="number" id="revenue1kkTotal">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Byty 2+kk</td>
+                                <td class="number" id="revenue2kkUnits">0</td>
+                                <td class="number" id="revenue2kkArea">0 m²</td>
+                                <td class="number" id="revenue2kkPrice">0 Kč/m²</td>
+                                <td class="number" id="revenue2kkTotal">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Byty 3+kk</td>
+                                <td class="number" id="revenue3kkUnits">0</td>
+                                <td class="number" id="revenue3kkArea">0 m²</td>
+                                <td class="number" id="revenue3kkPrice">0 Kč/m²</td>
+                                <td class="number" id="revenue3kkTotal">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Garážová stání</td>
+                                <td class="number" id="revenueParkingUnits">0</td>
+                                <td class="number">-</td>
+                                <td class="number" id="revenueParkingPrice">0 Kč/ks</td>
+                                <td class="number" id="revenueParkingTotal">0 Kč</td>
+                            </tr>
+                            <tr>
+                                <td>Sklepy</td>
+                                <td class="number" id="revenueCellarUnits">0</td>
+                                <td class="number" id="revenueCellarArea">0 m²</td>
+                                <td class="number" id="revenueCellarPrice">0 Kč/m²</td>
+                                <td class="number" id="revenueCellarTotal">0 Kč</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td><strong>CELKEM</strong></td>
+                                <td class="number"><strong id="totalUnits">0</strong></td>
+                                <td class="number"><strong id="totalSaleableArea">0 m²</strong></td>
+                                <td class="number">-</td>
+                                <td class="number"><strong id="totalRevenuesTable">0 Kč</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="summary-section">
+                    <div class="result-cards">
+                        <div class="result-card positive">
+                            <h4>Celkové příjmy</h4>
+                            <p class="value" id="totalRevenues">0 Kč</p>
+                        </div>
+                        <div class="result-card positive">
+                            <h4>Průměrná cena za m²</h4>
+                            <p class="value" id="avgPricePerSqm">0 Kč/m²</p>
+                        </div>
+                        <div class="result-card positive">
+                            <h4>Příjem na bytovou jednotku</h4>
+                            <p class="value" id="revenuePerUnit">0 Kč/bj</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Finanční analýza Tab -->
+            <div id="analysis" class="tab-content">
+                <div class="section-title">
+                    Finanční analýza projektu
+                </div>
+                
+                <div class="result-cards">
+                    <div class="result-card positive">
+                        <h4>Hrubý zisk</h4>
+                        <p class="value" id="grossProfit">0 Kč</p>
+                    </div>
+                    <div class="result-card">
+                        <h4>Ziskovost (%)</h4>
+                        <p class="value" id="profitMargin">0%</p>
+                    </div>
+                    <div class="result-card">
+                        <h4>ROI (%)</h4>
+                        <p class="value" id="roi">0%</p>
+                    </div>
+                    <div class="result-card">
+                        <h4>Doba návratnosti</h4>
+                        <p class="value" id="paybackPeriod">0 let</p>
+                    </div>
+                </div>
+                
+                <div class="summary-section">
+                    <h3>Souhrn projektu</h3>
+                    <table>
+                        <tr><td><strong>Celkové příjmy:</strong></td><td class="number" id="summaryRevenues">0 Kč</td></tr>
+                        <tr><td><strong>Celkové náklady:</strong></td><td class="number" id="summaryCosts">0 Kč</td></tr>
+                        <tr><td><strong>Hrubý zisk:</strong></td><td class="number" id="summaryProfit">0 Kč</td></tr>
+                        <tr><td><strong>Zisková marže:</strong></td><td class="number" id="summaryMargin">0%</td></tr>
+                        <tr><td><strong>Prodejní plocha celkem:</strong></td><td class="number" id="summaryArea">0 m²</td></tr>
+                        <tr><td><strong>Tržba za m²:</strong></td><td class="number" id="summaryPriceM2">0 Kč/m²</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Cashflow Tab -->
+            <div id="cashflow" class="tab-content">
+                <div class="section-title">
+                    Cashflow analýza
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Doba výstavby (měsíce)</label>
+                        <input type="number" id="constructionTime" value="24" oninput="calculateCashflow()">
+                    </div>
+                    <div class="form-group">
+                        <label>Začátek prodeje (měsíc)</label>
+                        <input type="number" id="salesStart" value="12" oninput="calculateCashflow()">
+                    </div>
+                    <div class="form-group">
+                        <label>Tempo prodeje (bytů/měsíc)</label>
+                        <input type="number" id="salesRate" value="3" oninput="calculateCashflow()">
+                    </div>
+                    <div class="form-group">
+                        <label>Úroková sazba (%)</label>
+                        <input type="number" id="interestRate" value="6.5" step="0.1" oninput="calculateCashflow()">
+                    </div>
+                </div>
+                
+                <div class="summary-section">
+                    <div class="result-cards">
+                        <div class="result-card">
+                            <h4>Maximální negativní CF</h4>
+                            <p class="value" id="maxNegativeCF">0 Kč</p>
+                        </div>
+                        <div class="result-card">
+                            <h4>Bod zvratu (měsíc)</h4>
+                            <p class="value" id="breakEvenMonth">0</p>
+                        </div>
+                        <div class="result-card">
+                            <h4>Finanční náklady</h4>
+                            <p class="value" id="financialCosts">0 Kč</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Citlivostní analýza Tab -->
+            <div id="sensitivity" class="tab-content">
+                <div class="section-title">
+                    Citlivostní analýza
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Změna prodejních cen (%)</label>
+                        <input type="range" id="priceChange" min="-20" max="20" value="0" step="1" oninput="calculateSensitivity()">
+                        <span id="priceChangeValue">0%</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Změna stavebních nákladů (%)</label>
+                        <input type="range" id="costChange" min="-20" max="20" value="0" step="1" oninput="calculateSensitivity()">
+                        <span id="costChangeValue">0%</span>
+                    </div>
+                </div>
+                
+                <div class="result-cards">
+                    <div class="result-card">
+                        <h4>Zisk při změně cen</h4>
+                        <p class="value" id="sensitivityPriceProfit">0 Kč</p>
+                    </div>
+                    <div class="result-card">
+                        <h4>Zisk při změně nákladů</h4>
+                        <p class="value" id="sensitivityCostProfit">0 Kč</p>
+                    </div>
+                    <div class="result-card">
+                        <h4>Kombinovaný zisk</h4>
+                        <p class="value" id="sensitivityCombinedProfit">0 Kč</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rizikové faktory Tab -->
+            <div id="risks" class="tab-content">
+                <div class="section-title">
+                    Hodnocení rizik projektu
+                </div>
+                
+                <div class="summary-section">
+                    <h3>Identifikovaná rizika</h3>
+                    <div id="riskAssessment">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Návod Tab -->
+            <div id="guide" class="tab-content">
+                <div class="section-title">
+                    Návod k použití kalkulačky Developmenta
+                </div>
+                
+                <div class="summary-section">
+                    <h3>Účel kalkulačky</h3>
+                    <p>Kalkulačka poskytuje odhady nákladů a příjmů developerského projektu. Umožňuje vám:</p>
+                    <ul>
+                        <li>Vypočítat všechny náklady projektu</li>
+                        <li>Odhadnout příjmy z prodeje</li>
+                        <li>Analyzovat rentabilitu a rizika</li>
+                        <li>Sledovat cashflow během realizace</li>
+                        <li>Provést citlivostní analýzu</li>
+                    </ul>
+                </div>
+
+                <div class="summary-section">
+                    <h3>Krok za krokem</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <h4>1. Vstupní data</h4>
+                            <p><strong>Základní údaje o projektu:</strong></p>
+                            <ul>
+                                <li><strong>Celková plocha pozemku (m²):</strong> Rozloha pozemku určeného k zástavbě</li>
+                                <li><strong>Hrubá podlažní plocha (m²):</strong> Celková podlažní plocha všech nadzemních podlaží</li>
+                                <li><strong>Počet bytů:</strong> Celkový počet bytových jednotek v projektu</li>
+                                <li><strong>Počet parkovacích míst:</strong> Počet parkovacích stání (garáže + venkovní)</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="form-group">
+                            <h4>2. Náklady</h4>
+                            <p><strong>Klíčové nákladové položky:</strong></p>
+                            <ul>
+                                <li><strong>Cena pozemku:</strong> Kupní cena pozemku včetně poplatků</li>
+                                <li><strong>Náklady na výstavbu za m²:</strong> Stavební náklady podle standardu (Standard: 35 000 Kč/m², Premium: 45 000 Kč/m², Luxus: 60 000 Kč/m²)</li>
+                                <li><strong>Projektování:</strong> Automaticky 3% z celkových stavebních nákladů</li>
+                                <li><strong>Povolení a dozor:</strong> Automaticky 2% z celkových stavebních nákladů</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="summary-section">
+                    <h3>Interpretace výsledků</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <h4>Klíčové ukazatele</h4>
+                            <ul>
+                                <li><strong>Celkový zisk:</strong> Rozdíl mezi celkovými příjmy a náklady</li>
+                                <li><strong>Marže (%):</strong> Procentuální ziskovost projektu</li>
+                                <li><strong>ROI (%):</strong> Návratnost investovaného kapitálu za rok</li>
+                                <li><strong>Cena za m²:</strong> Průměrná prodejní cena za metr čtvereční</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="form-group">
+                            <h4>Hodnocení projektů</h4>
+                            <ul>
+                                <li><strong>Marže nad 20%:</strong> Velmi dobrý projekt</li>
+                                <li><strong>Marže 15-20%:</strong> Dobrý projekt</li>
+                                <li><strong>Marže 10-15%:</strong> Průměrný projekt</li>
+                                <li><strong>Marže pod 10%:</strong> Rizikový projekt</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="summary-section">
+                    <h3>Jak používat jednotlivé sekce</h3>
+                    
+                    <h4>Náklady</h4>
+                    <p>V této sekci najdete podrobný rozpis všech nákladů projektu rozdělených do kategorií:</p>
+                    <ul>
+                        <li>Pozemek a převodní náklady</li>
+                        <li>Příprava a projektování</li>
+                        <li>Výstavba a dokončení</li>
+                        <li>Marketing a prodej</li>
+                        <li>Financování a rezervy</li>
+                    </ul>
+
+                    <h4>Příjmy</h4>
+                    <p>Zde vidíte odhady příjmů z prodeje:</p>
+                    <ul>
+                        <li>Příjmy z prodeje bytů podle kategorií</li>
+                        <li>Příjmy z prodeje parkovacích míst</li>
+                        <li>Celkové příjmy a průměrné ceny</li>
+                    </ul>
+
+                    <h4>Analýza</h4>
+                    <p>Finanční analýza obsahuje klíčové ukazatele:</p>
+                    <ul>
+                        <li>Ziskovost a rentabilitu</li>
+                        <li>Porovnání s tržními benchmarky</li>
+                        <li>Doporučení pro optimalizaci</li>
+                    </ul>
+
+                    <h4>Cashflow</h4>
+                    <p>Analýza peněžních toků v čase:</p>
+                    <ul>
+                        <li>Měsíční výdaje během výstavby</li>
+                        <li>Příjmy z postupného prodeje</li>
+                        <li>Křivka kumulativního cashflow</li>
+                        <li>Identifikace bodu zvratu</li>
+                    </ul>
+
+                    <h4>Citlivostní analýza</h4>
+                    <p>Testování různých scénářů:</p>
+                    <ul>
+                        <li>Dopad změn prodejních cen</li>
+                        <li>Vliv růstu nákladů</li>
+                        <li>Kombinované scénáře</li>
+                    </ul>
+                </div>
+
+                <div class="summary-section">
+                    <h3>Důležité upozornění</h3>
+                    <div class="risk-item">
+                        <h4>Přesnost výpočtů</h4>
+                        <p>Kalkulačka poskytuje odhady na základě zadaných parametrů. Skutečné náklady a příjmy se mohou lišit v závislosti na:</p>
+                        <ul>
+                            <li>Aktuální situaci na trhu</li>
+                            <li>Konkrétních podmínkách lokality</li>
+                            <li>Změnách v legislativě</li>
+                            <li>Nepředvídaných okolnostech</li>
+                        </ul>
+                        <p><strong>Doporučujeme:</strong> Použít kalkulačku jako výchozí bod pro detailnější analýzu a vždy konzultovat s odborníky.</p>
+                    </div>
+                </div>
+
+                <div class="summary-section">
+                    <h3>Tipy pro úspěšný projekt</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <h4>Před zahájením</h4>
+                            <ul>
+                                <li>Proveďte průzkum trhu v dané lokalitě</li>
+                                <li>Ověřte územní plán a možnosti zástavby</li>
+                                <li>Konzultujte s architektem optimální využití pozemku</li>
+                                <li>Zajistěte si rezervu 10-15% na nepředvídané náklady</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="form-group">
+                            <h4>Během realizace</h4>
+                            <ul>
+                                <li>Pravidelně aktualizujte kalkulaci</li>
+                                <li>Sledujte cashflow a zajistěte dostatečné financování</li>
+                                <li>Monitoring konkurence a tržních cen</li>
+                                <li>Flexibilní přístup k marketingu a prodeji</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="summary-section">
+                    <h3>Kontakt a podpora</h3>
+                    <p>Pro podrobné konzultace a individuální analýzy projektů kontaktujte naše odborníky na development nemovitostí.</p>
+                    <p><em>Kalkulačka Developmenta - Váš partner pro úspěšné developerské projekty</em></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+    <script>
+        // Global project data
+        let projectData = {
+            costs: {},
+            revenues: {},
+            totalCosts: 0,
+            totalRevenues: 0,
+            totalSaleableArea: 0,
+            totalGFA: 0,
+            totalUnits: 0
+        };
+
+        // Smooth scrolling for navigation links
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('.tab[href^="#"]');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                        
+                        // Update active state
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                });
+            });
+
+            // Update active link on scroll
+            const sections = document.querySelectorAll('.tab-content');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === `#${id}`) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, {
+                rootMargin: '-120px 0px -60% 0px'
+            });
+
+            sections.forEach(section => observer.observe(section));
+        });
+
+        // Utility function to format numbers
+        function formatNumber(num) {
+            return new Intl.NumberFormat('cs-CZ').format(Math.round(num));
+        }
+
+        // Utility function to format currency
+        function formatCurrency(num) {
+            return formatNumber(num) + ' Kč';
+        }
+
+        // Main calculation function based on the methodology
+        function calculate() {
+            // Get input values
+            const landArea = parseFloat(document.getElementById('landArea').value) || 0;
+            const landPrice = parseFloat(document.getElementById('landPrice').value) || 0;
+            const totalGFA = parseFloat(document.getElementById('totalGFA').value) || 0;
+            const buildingStandard = document.getElementById('buildingStandard').value;
+            const utilitiesConnection = document.getElementById('utilitiesConnection').value;
+            const geologicalConditions = document.getElementById('geologicalConditions').value;
+
+            // Apartment data
+            const units1kk = parseFloat(document.getElementById('units1kk').value) || 0;
+            const area1kk = parseFloat(document.getElementById('area1kk').value) || 0;
+            const units2kk = parseFloat(document.getElementById('units2kk').value) || 0;
+            const area2kk = parseFloat(document.getElementById('area2kk').value) || 0;
+            const units3kk = parseFloat(document.getElementById('units3kk').value) || 0;
+            const area3kk = parseFloat(document.getElementById('area3kk').value) || 0;
+            
+            const parkingSpaces = parseFloat(document.getElementById('parkingSpaces').value) || 0;
+            const cellars = parseFloat(document.getElementById('cellars').value) || 0;
+            const cellarArea = parseFloat(document.getElementById('cellarArea').value) || 0;
+
+            // Prices
+            const price1kk = parseFloat(document.getElementById('price1kk').value) || 0;
+            const price2kk = parseFloat(document.getElementById('price2kk').value) || 0;
+            const price3kk = parseFloat(document.getElementById('price3kk').value) || 0;
+            const parkingPrice = parseFloat(document.getElementById('parkingPrice').value) || 0;
+            const cellarPrice = parseFloat(document.getElementById('cellarPrice').value) || 0;
+
+            // Calculate construction cost per sqm based on standard
+            let constructionCostPerSqm;
+            switch(buildingStandard) {
+                case 'standard': constructionCostPerSqm = 30000; break;
+                case 'premium': constructionCostPerSqm = 42000; break;
+                case 'luxury': constructionCostPerSqm = 60000; break;
+                default: constructionCostPerSqm = 42000;
+            }
+
+            // Calculate multipliers based on conditions
+            let utilitiesMultiplier = 1;
+            switch(utilitiesConnection) {
+                case 'existing': utilitiesMultiplier = 0.5; break;
+                case 'partial': utilitiesMultiplier = 1; break;
+                case 'new': utilitiesMultiplier = 1.5; break;
+            }
+
+            let geologicalMultiplier = 1;
+            switch(geologicalConditions) {
+                case 'good': geologicalMultiplier = 1; break;
+                case 'medium': geologicalMultiplier = 1.2; break;
+                case 'difficult': geologicalMultiplier = 1.5; break;
+            }
+
+            // Calculate costs based on methodology
+            const costs = {
+                // 2.1 Náklady na pozemek
+                land: landPrice,
+                landTransfer: landPrice * 0.04, // 4% převodní náklady
+                
+                // 2.2 Projektové náklady
+                architecturalStudy: totalGFA * 100, // 50-150 Kč/m², using 100
+                projectDocumentation: totalGFA * 300, // 200-400 Kč/m², using 300
+                engineeringSystems: totalGFA * 75, // 50-100 Kč/m², using 75
+                structuralProject: totalGFA * 115, // 80-150 Kč/m², using 115
+                energyAudit: totalGFA * 35, // 20-50 Kč/m², using 35
+                
+                // 2.3 Stavební náklady
+                construction: totalGFA * constructionCostPerSqm * geologicalMultiplier,
+                
+                // 2.4 Vedlejší náklady
+                utilitiesConnection: totalGFA * 500 * utilitiesMultiplier, // 200-800 Kč/m²
+                landscaping: landArea * 350, // 200-800 Kč/m²
+                communications: landArea * 0.3 * 2000, // 30% pozemku, 1000-3000 Kč/m²
+                fencing: Math.sqrt(landArea) * 4 * 2000, // obvod pozemku * 2000 Kč/bm
+                
+                // 2.5 Administrativní náklady
+                buildingPermit: totalGFA * constructionCostPerSqm * 0.001, // 0.1%
+                inspection: totalGFA * constructionCostPerSqm * 0.015, // 1.5%
+                supervision: totalGFA * constructionCostPerSqm * 0.01, // 1%
+                
+                // Will be calculated as % of revenues
+                marketing: 0,
+                financing: 0,
+                contingency: 0
+            };
+
+            // Calculate total construction costs for contingency
+            const totalProjectCosts = costs.architecturalStudy + costs.projectDocumentation + 
+                                    costs.engineeringSystems + costs.structuralProject + costs.energyAudit;
+            const totalConstructionCosts = costs.construction + costs.utilitiesConnection + 
+                                         costs.landscaping + costs.communications;
+            
+            costs.contingency = (totalProjectCosts + totalConstructionCosts) * 0.08; // 8% rezerva
+
+            // Calculate revenues
+            const totalSaleableArea = (units1kk * area1kk) + (units2kk * area2kk) + (units3kk * area3kk);
+            const totalUnits = units1kk + units2kk + units3kk;
+
+            const revenues = {
+                apartments1kk: units1kk * area1kk * price1kk,
+                apartments2kk: units2kk * area2kk * price2kk,
+                apartments3kk: units3kk * area3kk * price3kk,
+                parking: parkingSpaces * parkingPrice,
+                cellars: cellars * cellarArea * cellarPrice
+            };
+
+            const totalRevenues = Object.values(revenues).reduce((a, b) => a + b, 0);
+            
+            // Calculate marketing as % of revenues
+            costs.marketing = totalRevenues * 0.025; // 2.5%
+            costs.financing = totalRevenues * 0.02; // 2% estimated financing costs
+
+            const totalCosts = Object.values(costs).reduce((a, b) => a + b, 0);
+
+            // Store data
+            projectData.costs = costs;
+            projectData.revenues = revenues;
+            projectData.totalCosts = totalCosts;
+            projectData.totalRevenues = totalRevenues;
+            projectData.totalSaleableArea = totalSaleableArea;
+            projectData.totalGFA = totalGFA;
+            projectData.totalUnits = totalUnits;
+
+            // Update displays
+            updateCostsTable(projectData.costs);
+            updateRevenuesTable();
+            updateAnalysis();
+            updateRiskAssessment();
+        }
+
+        // Update costs table display
+        function updateCostsTable(costs) {
+            // Update individual cost items
+            document.getElementById('landCost').textContent = formatCurrency(costs.land);
+            document.getElementById('landTransferCost').textContent = formatCurrency(costs.landTransfer);
+            document.getElementById('architecturalStudyCost').textContent = formatCurrency(costs.architecturalStudy);
+            document.getElementById('projectDocumentationCost').textContent = formatCurrency(costs.projectDocumentation);
+            document.getElementById('engineeringSystemsCost').textContent = formatCurrency(costs.engineeringSystems);
+            document.getElementById('structuralProjectCost').textContent = formatCurrency(costs.structuralProject);
+            document.getElementById('energyAuditCost').textContent = formatCurrency(costs.energyAudit);
+            document.getElementById('constructionCost').textContent = formatCurrency(costs.construction);
+            document.getElementById('utilitiesConnectionCost').textContent = formatCurrency(costs.utilitiesConnection);
+            document.getElementById('landscapingCost').textContent = formatCurrency(costs.landscaping);
+            document.getElementById('communicationsCost').textContent = formatCurrency(costs.communications);
+            document.getElementById('fencingCost').textContent = formatCurrency(costs.fencing);
+            document.getElementById('buildingPermitCost').textContent = formatCurrency(costs.buildingPermit);
+            document.getElementById('inspectionCost').textContent = formatCurrency(costs.inspection);
+            document.getElementById('supervisionCost').textContent = formatCurrency(costs.supervision);
+            document.getElementById('marketingCost').textContent = formatCurrency(costs.marketing);
+            document.getElementById('financingCost').textContent = formatCurrency(costs.financing);
+            document.getElementById('contingencyCost').textContent = formatCurrency(costs.contingency);
+
+            // Update table total
+            document.getElementById('totalCostsTable').textContent = formatCurrency(projectData.totalCosts);
+
+            // Update summary cards
+            const landCosts = costs.land + costs.landTransfer;
+            const projectCosts = costs.architecturalStudy + costs.projectDocumentation + costs.engineeringSystems + costs.structuralProject + costs.energyAudit;
+            const constructionCosts = costs.construction + costs.utilitiesConnection + costs.landscaping + costs.communications + costs.fencing;
+            const adminCosts = costs.buildingPermit + costs.inspection + costs.supervision + costs.marketing + costs.financing + costs.contingency;
+            
+            document.getElementById('landCostsSummary').textContent = formatCurrency(landCosts);
+            document.getElementById('projectCostsSummary').textContent = formatCurrency(projectCosts);
+            document.getElementById('constructionCostsSummary').textContent = formatCurrency(constructionCosts);
+            document.getElementById('adminCostsSummary').textContent = formatCurrency(adminCosts);
+            document.getElementById('totalCostsSummary').textContent = formatCurrency(projectData.totalCosts);
+        }
+
+        // Update revenues table display
+        function updateRevenuesTable() {
+            const units1kk = parseFloat(document.getElementById('units1kk').value) || 0;
+            const area1kk = parseFloat(document.getElementById('area1kk').value) || 0;
+            const units2kk = parseFloat(document.getElementById('units2kk').value) || 0;
+            const area2kk = parseFloat(document.getElementById('area2kk').value) || 0;
+            const units3kk = parseFloat(document.getElementById('units3kk').value) || 0;
+            const area3kk = parseFloat(document.getElementById('area3kk').value) || 0;
+            const parkingSpaces = parseFloat(document.getElementById('parkingSpaces').value) || 0;
+            const cellars = parseFloat(document.getElementById('cellars').value) || 0;
+            const cellarArea = parseFloat(document.getElementById('cellarArea').value) || 0;
+            const parkingPrice = parseFloat(document.getElementById('parkingPrice').value) || 0;
+            const cellarPrice = parseFloat(document.getElementById('cellarPrice').value) || 0;
+
+            const revenues = projectData.revenues;
+
+            // Update revenue rows with safe division
+            document.getElementById('revenue1kkUnits').textContent = formatNumber(units1kk);
+            document.getElementById('revenue1kkArea').textContent = formatNumber(area1kk) + ' m²';
+            const price1kkPerSqm = (units1kk > 0 && area1kk > 0) ? revenues.apartments1kk / (units1kk * area1kk) : 0;
+            document.getElementById('revenue1kkPrice').textContent = formatNumber(price1kkPerSqm) + ' Kč/m²';
+            document.getElementById('revenue1kkTotal').textContent = formatCurrency(revenues.apartments1kk);
+
+            document.getElementById('revenue2kkUnits').textContent = formatNumber(units2kk);
+            document.getElementById('revenue2kkArea').textContent = formatNumber(area2kk) + ' m²';
+            const price2kkPerSqm = (units2kk > 0 && area2kk > 0) ? revenues.apartments2kk / (units2kk * area2kk) : 0;
+            document.getElementById('revenue2kkPrice').textContent = formatNumber(price2kkPerSqm) + ' Kč/m²';
+            document.getElementById('revenue2kkTotal').textContent = formatCurrency(revenues.apartments2kk);
+
+            document.getElementById('revenue3kkUnits').textContent = formatNumber(units3kk);
+            document.getElementById('revenue3kkArea').textContent = formatNumber(area3kk) + ' m²';
+            const price3kkPerSqm = (units3kk > 0 && area3kk > 0) ? revenues.apartments3kk / (units3kk * area3kk) : 0;
+            document.getElementById('revenue3kkPrice').textContent = formatNumber(price3kkPerSqm) + ' Kč/m²';
+            document.getElementById('revenue3kkTotal').textContent = formatCurrency(revenues.apartments3kk);
+
+            document.getElementById('revenueParkingUnits').textContent = formatNumber(parkingSpaces);
+            document.getElementById('revenueParkingPrice').textContent = formatNumber(parkingPrice) + ' Kč/ks';
+            document.getElementById('revenueParkingTotal').textContent = formatCurrency(revenues.parking);
+
+            document.getElementById('revenueCellarUnits').textContent = formatNumber(cellars);
+            document.getElementById('revenueCellarArea').textContent = formatNumber(cellarArea) + ' m²';
+            document.getElementById('revenueCellarPrice').textContent = formatNumber(cellarPrice) + ' Kč/m²';
+            document.getElementById('revenueCellarTotal').textContent = formatCurrency(revenues.cellars);
+
+            // Update table totals
+            document.getElementById('totalUnits').textContent = formatNumber(projectData.totalUnits);
+            document.getElementById('totalSaleableArea').textContent = formatNumber(projectData.totalSaleableArea) + ' m²';
+            document.getElementById('totalRevenuesTable').textContent = formatCurrency(projectData.totalRevenues);
+
+            // Update summary cards
+            document.getElementById('totalRevenues').textContent = formatCurrency(projectData.totalRevenues);
+            const avgPricePerSqm = projectData.totalSaleableArea > 0 ? projectData.totalRevenues / projectData.totalSaleableArea : 0;
+            document.getElementById('avgPricePerSqm').textContent = formatNumber(avgPricePerSqm) + ' Kč/m²';
+            const revenuePerUnit = projectData.totalUnits > 0 ? projectData.totalRevenues / projectData.totalUnits : 0;
+            document.getElementById('revenuePerUnit').textContent = formatNumber(revenuePerUnit) + ' Kč/bj';
+        }
+
+        // Update financial analysis
+        function updateAnalysis() {
+            const grossProfit = projectData.totalRevenues - projectData.totalCosts;
+            const profitMargin = projectData.totalRevenues > 0 ? (grossProfit / projectData.totalRevenues) * 100 : 0;
+            const roi = projectData.totalCosts > 0 ? (grossProfit / projectData.totalCosts) * 100 : 0;
+            const paybackPeriod = grossProfit > 0 ? projectData.totalCosts / (grossProfit / 12) : 0; // assuming 1 year to recoup
+
+            // Update analysis display
+            document.getElementById('grossProfit').textContent = formatCurrency(grossProfit);
+            document.getElementById('profitMargin').textContent = profitMargin.toFixed(1) + '%';
+            document.getElementById('roi').textContent = roi.toFixed(1) + '%';
+            document.getElementById('paybackPeriod').textContent = paybackPeriod.toFixed(1) + ' let';
+
+            // Update summary section
+            document.getElementById('summaryRevenues').textContent = formatCurrency(projectData.totalRevenues);
+            document.getElementById('summaryCosts').textContent = formatCurrency(projectData.totalCosts);
+            document.getElementById('summaryProfit').textContent = formatCurrency(grossProfit);
+            document.getElementById('summaryMargin').textContent = profitMargin.toFixed(1) + '%';
+            document.getElementById('summaryArea').textContent = formatNumber(projectData.totalSaleableArea) + ' m²';
+            
+            const pricePerSqm = projectData.totalSaleableArea > 0 ? projectData.totalRevenues / projectData.totalSaleableArea : 0;
+            document.getElementById('summaryPriceM2').textContent = formatNumber(pricePerSqm) + ' Kč/m²';
+
+            // Update result card styling based on profitability
+            const grossProfitCard = document.querySelector('#analysis .result-card.positive');
+            if (grossProfit > 0) {
+                grossProfitCard.classList.add('positive');
+                grossProfitCard.classList.remove('negative');
+            } else {
+                grossProfitCard.classList.add('negative');
+                grossProfitCard.classList.remove('positive');
+            }
+        }
+
+        // Update risk assessment
+        function updateRiskAssessment() {
+            const risks = [];
+            const profitMargin = projectData.totalRevenues > 0 ? ((projectData.totalRevenues - projectData.totalCosts) / projectData.totalRevenues) * 100 : 0;
+            const roi = projectData.totalCosts > 0 ? ((projectData.totalRevenues - projectData.totalCosts) / projectData.totalCosts) * 100 : 0;
+
+            // Assess various risk factors
+            if (profitMargin < 15) {
+                risks.push({
+                    level: 'high',
+                    factor: 'Nízká ziskovost',
+                    description: `Zisková marže ${profitMargin.toFixed(1)}% je pod doporučenou hranicí 15%.`,
+                    recommendation: 'Zvažte optimalizaci nákladů nebo zvýšení prodejních cen.'
+                });
+            }
+
+            if (roi < 20) {
+                risks.push({
+                    level: 'medium',
+                    factor: 'Nízký ROI',
+                    description: `ROI ${roi.toFixed(1)}% je pod doporučenou hranicí 20%.`,
+                    recommendation: 'Projekt může být méně atraktivní pro investory.'
+                });
+            }
+
+            const geologicalConditions = document.getElementById('geologicalConditions').value;
+            if (geologicalConditions === 'difficult') {
+                risks.push({
+                    level: 'high',
+                    factor: 'Složité geologické podmínky',
+                    description: 'Náročné geologické podmínky mohou způsobit navýšení stavebních nákladů.',
+                    recommendation: 'Doporucujeme detailní geologický průzkum a vyšší rezervu na nepředvídané náklady.'
+                });
+            }
+
+            const utilitiesConnection = document.getElementById('utilitiesConnection').value;
+            if (utilitiesConnection === 'new') {
+                risks.push({
+                    level: 'medium',
+                    factor: 'Nové inženýrské sítě',
+                    description: 'Nutnost budování nových inženýrských sítí zvyšuje náklady a časové nároky.',
+                    recommendation: 'Zajistěte včasné jednání s dodavateli energií a vody.'
+                });
+            }
+
+            // Display risks
+            const riskContainer = document.getElementById('riskAssessment');
+            if (risks.length === 0) {
+                riskContainer.innerHTML = '<div class="risk-item low"><h4>Žádná kritická rizika</h4><p>Projekt vykazuje přijatelné rizikové faktory.</p></div>';
+            } else {
+                riskContainer.innerHTML = risks.map(risk => `
+                    <div class="risk-item ${risk.level}">
+                        <h4>${risk.level === 'high' ? '🔴' : risk.level === 'medium' ? '🟡' : '🟢'} ${risk.factor}</h4>
+                        <p><strong>Popis:</strong> ${risk.description}</p>
+                        <p><strong>Doporučení:</strong> ${risk.recommendation}</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Save project data to JSON file
+        function saveProject() {
+            const projectData = {
+                // Basic inputs
+                landArea: document.getElementById('landArea').value,
+                landPrice: document.getElementById('landPrice').value,
+                buildingCoeff: document.getElementById('buildingCoeff').value,
+                maxFloors: document.getElementById('maxFloors').value,
+                totalGFA: document.getElementById('totalGFA').value,
+                buildingStandard: document.getElementById('buildingStandard').value,
+                utilitiesConnection: document.getElementById('utilitiesConnection').value,
+                geologicalConditions: document.getElementById('geologicalConditions').value,
+                
+                // Unit data
+                units1kk: document.getElementById('units1kk').value,
+                area1kk: document.getElementById('area1kk').value,
+                units2kk: document.getElementById('units2kk').value,
+                area2kk: document.getElementById('area2kk').value,
+                units3kk: document.getElementById('units3kk').value,
+                area3kk: document.getElementById('area3kk').value,
+                parkingSpaces: document.getElementById('parkingSpaces').value,
+                cellars: document.getElementById('cellars').value,
+                cellarArea: document.getElementById('cellarArea').value,
+                
+                // Prices
+                price1kk: document.getElementById('price1kk').value,
+                price2kk: document.getElementById('price2kk').value,
+                price3kk: document.getElementById('price3kk').value,
+                parkingPrice: document.getElementById('parkingPrice').value,
+                cellarPrice: document.getElementById('cellarPrice').value,
+                
+                // Cashflow parameters
+                constructionTime: document.getElementById('constructionTime').value,
+                salesStart: document.getElementById('salesStart').value,
+                salesRate: document.getElementById('salesRate').value,
+                interestRate: document.getElementById('interestRate').value,
+                
+                // Sensitivity parameters
+                priceChange: document.getElementById('priceChange').value,
+                costChange: document.getElementById('costChange').value,
+                
+                // Metadata
+                savedAt: new Date().toISOString(),
+                version: "1.0"
+            };
+
+            const json = JSON.stringify(projectData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            a.download = `developmenta-project-${timestamp}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            alert('Projekt byl úspěšně uložen!');
+        }
+
+        // Load project data from JSON file
+        function loadProject(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function() {
+                try {
+                    const data = JSON.parse(reader.result);
+                    
+                    // Load basic inputs
+                    if (data.landArea) document.getElementById('landArea').value = data.landArea;
+                    if (data.landPrice) document.getElementById('landPrice').value = data.landPrice;
+                    if (data.buildingCoeff) document.getElementById('buildingCoeff').value = data.buildingCoeff;
+                    if (data.maxFloors) document.getElementById('maxFloors').value = data.maxFloors;
+                    if (data.totalGFA) document.getElementById('totalGFA').value = data.totalGFA;
+                    if (data.buildingStandard) document.getElementById('buildingStandard').value = data.buildingStandard;
+                    if (data.utilitiesConnection) document.getElementById('utilitiesConnection').value = data.utilitiesConnection;
+                    if (data.geologicalConditions) document.getElementById('geologicalConditions').value = data.geologicalConditions;
+                    
+                    // Unit data
+                    if (data.units1kk) document.getElementById('units1kk').value = data.units1kk;
+                    if (data.area1kk) document.getElementById('area1kk').value = data.area1kk;
+                    if (data.units2kk) document.getElementById('units2kk').value = data.units2kk;
+                    if (data.area2kk) document.getElementById('area2kk').value = data.area2kk;
+                    if (data.units3kk) document.getElementById('units3kk').value = data.units3kk;
+                    if (data.area3kk) document.getElementById('area3kk').value = data.area3kk;
+                    
+                    const parkingSpaces = parseFloat(document.getElementById('parkingSpaces').value) || 0;
+                    const cellars = parseFloat(document.getElementById('cellars').value) || 0;
+                    const cellarArea = parseFloat(document.getElementById('cellarArea').value) || 0;
+
+                    // Prices
+                    if (data.price1kk) document.getElementById('price1kk').value = data.price1kk;
+                    if (data.price2kk) document.getElementById('price2kk').value = data.price2kk;
+                    if (data.price3kk) document.getElementById('price3kk').value = data.price3kk;
+                    if (data.parkingPrice) document.getElementById('parkingPrice').value = data.parkingPrice;
+                    if (data.cellarPrice) document.getElementById('cellarPrice').value = data.cellarPrice;
+                    
+                    // Cashflow parameters
+                    if (data.constructionTime) document.getElementById('constructionTime').value = data.constructionTime;
+                    if (data.salesStart) document.getElementById('salesStart').value = data.salesStart;
+                    if (data.salesRate) document.getElementById('salesRate').value = data.salesRate;
+                    if (data.interestRate) document.getElementById('interestRate').value = data.interestRate;
+                    
+                    // Sensitivity parameters
+                    if (data.priceChange) document.getElementById('priceChange').value = data.priceChange;
+                    if (data.costChange) document.getElementById('costChange').value = data.costChange;
+
+                    // Recalculate everything
+                    calculate();
+                    calculateCashflow();
+                    calculateSensitivity();
+                    
+                    alert('Projekt byl úspěšně načten!');
+                } catch (error) {
+                    alert('Chyba při načítání projektu: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Export to PDF with comprehensive analysis
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            // Add Czech font support
+            doc.addFont('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2', 'Roboto', 'normal');
+            doc.setFont('Roboto');
+            
+            // Professional blue color palette
+            const primaryColor = [25, 118, 210]; // Professional blue
+            const secondaryColor = [69, 90, 120]; // Dark blue-gray
+            const accentColor = [13, 71, 161]; // Deep blue
+            
+            let yPosition = 20;
+            
+            // Title page
+            doc.setFontSize(24);
+            doc.setTextColor(...primaryColor);
+            doc.text('DEVELOPMENTA', 105, yPosition, { align: 'center' });
+            
+            yPosition += 10;
+            doc.setFontSize(16);
+            doc.setTextColor(...secondaryColor);
+            doc.text('Analyza developerského projektu', 105, yPosition, { align: 'center' });
+            
+            yPosition += 20;
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Datum vytvoreni: ${new Date().toLocaleDateString('cs-CZ')}`, 105, yPosition, { align: 'center' });
+            
+            // Project summary
+            yPosition += 30;
+            doc.setFontSize(16);
+            doc.setTextColor(...primaryColor);
+            doc.text('1. PREHLED PROJEKTU', 20, yPosition);
+            
+            yPosition += 15;
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            
+            const landArea = document.getElementById('landArea').value;
+            const landPrice = document.getElementById('landPrice').value;
+            const buildingCoeff = document.getElementById('buildingCoeff').value;
+            const maxFloors = document.getElementById('maxFloors').value;
+            const totalGFA = document.getElementById('totalGFA').value;
+            const buildingStandard = document.getElementById('buildingStandard').value;
+            const utilitiesConnection = document.getElementById('utilitiesConnection').value;
+            const geologicalConditions = document.getElementById('geologicalConditions').value;
+            const totalUnits = projectData.totalUnits;
+            
+            doc.text(`Vymera pozemku: ${formatNumber(landArea)} m2`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Cena pozemku: ${formatNumber(landPrice)} Kc/m2`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Hruba podlahova plocha: ${formatNumber(totalGFA)} m2`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Koeficient vyuziti pozemku: ${buildingCoeff}`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Maximalni pocet podlazi: ${maxFloors}`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Standard stavby: ${buildingStandard}`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Pripojeni inzenyrskych siti: ${utilitiesConnection}`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Geologicke pomery: ${geologicalConditions}`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Celkovy pocet bytovych jednotek: ${totalUnits}`, 25, yPosition);
+            
+            // Unit breakdown
+            yPosition += 15;
+            doc.setFontSize(12);
+            doc.setTextColor(...secondaryColor);
+            doc.text('Skladba bytu:', 25, yPosition);
+            
+            yPosition += 8;
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            
+            const units1kk = document.getElementById('units1kk').value;
+            const area1kk = document.getElementById('area1kk').value;
+            const units2kk = document.getElementById('units2kk').value;
+            const area2kk = document.getElementById('area2kk').value;
+            const units3kk = document.getElementById('units3kk').value;
+            const area3kk = document.getElementById('area3kk').value;
+            const parkingSpaces = document.getElementById('parkingSpaces').value;
+            const cellars = document.getElementById('cellars').value;
+            const cellarArea = document.getElementById('cellarArea').value;
+            
+            doc.text(`1+kk: ${units1kk} jednotek, prumerna plocha ${area1kk} m2`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`2+kk: ${units2kk} jednotek, prumerna plocha ${area2kk} m2`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`3+kk: ${units3kk} jednotek, prumerna plocha ${area3kk} m2`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`Parkovaci stani: ${parkingSpaces}`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`Sklepy: ${cellars} jednotek, prumerna plocha ${cellarArea} m2`, 30, yPosition);
+            
+            // Financial summary
+            yPosition += 20;
+            doc.setFontSize(16);
+            doc.setTextColor(...primaryColor);
+            doc.text('2. FINANCNI PREHLED', 20, yPosition);
+            
+            yPosition += 15;
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            
+            doc.text(`Celkove naklady: ${formatNumber(projectData.totalCosts)} Kc`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Celkove prijmy: ${formatNumber(projectData.totalRevenues)} Kc`, 25, yPosition);
+            yPosition += 6;
+            
+            const grossProfit = projectData.totalRevenues - projectData.totalCosts;
+            const profitMargin = projectData.totalRevenues > 0 ? (grossProfit / projectData.totalRevenues) * 100 : 0;
+            const roi = projectData.totalCosts > 0 ? (grossProfit / projectData.totalCosts) * 100 : 0;
+            
+            doc.text(`Hruby zisk: ${formatNumber(grossProfit)} Kc`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Ziskova marze: ${profitMargin.toFixed(1)}%`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`ROI: ${roi.toFixed(1)}%`, 25, yPosition);
+            
+            // Selling prices
+            yPosition += 15;
+            doc.setFontSize(12);
+            doc.setTextColor(...secondaryColor);
+            doc.text('Prodejni ceny:', 25, yPosition);
+            
+            yPosition += 8;
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            
+            const price1kk = document.getElementById('price1kk').value;
+            const price2kk = document.getElementById('price2kk').value;
+            const price3kk = document.getElementById('price3kk').value;
+            const parkingPrice = document.getElementById('parkingPrice').value;
+            const cellarPrice = document.getElementById('cellarPrice').value;
+            
+            doc.text(`1+kk: ${formatNumber(price1kk)} Kc/m2`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`2+kk: ${formatNumber(price2kk)} Kc/m2`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`3+kk: ${formatNumber(price3kk)} Kc/m2`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`Parkovaci stani: ${formatNumber(parkingPrice)} Kc/kusy`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`Sklepy: ${formatNumber(cellarPrice)} Kc/m2`, 30, yPosition);
+            
+            // Commentary on financial performance
+            yPosition += 15;
+            doc.setFontSize(12);
+            doc.setTextColor(...secondaryColor);
+            doc.text('Komentar k financni vykonnosti:', 25, yPosition);
+            
+            yPosition += 8;
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            
+            let commentary = "";
+            if (profitMargin > 20) {
+                commentary = "Projekt vykazuje vybornou rentabilitu";
+            } else if (profitMargin > 15) {
+                commentary = "Projekt ma dobrou rentabilitu";
+            } else if (profitMargin > 10) {
+                commentary = "Ziskova marze 10-15% je prijatelna, ale projekt vyzaduje pecilive rizeni nakladu.";
+            } else if (profitMargin > 0) {
+                commentary = "Nizka ziskova marze pod 10% predstavuje vyssi riziko. Doporucujeme revizi nakladu nebo cen.";
+            } else {
+                commentary = "Projekt je ve ztrate. Nutna je zasadni revize konceptu, nakladu nebo prodejnich cen.";
+            }
+            
+            const lines = doc.splitTextToSize(commentary, 160);
+            doc.text(lines, 25, yPosition);
+            yPosition += lines.length * 5;
+            
+            // New page for detailed costs
+            doc.addPage();
+            yPosition = 20;
+            
+            doc.setFontSize(16);
+            doc.setTextColor(...primaryColor);
+            doc.text('3. DETAILNI ANALYZA NAKLADU', 20, yPosition);
+            
+            yPosition += 15;
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            
+            // Cost breakdown with ALL parameters
+            const costs = projectData.costs;
+            
+            doc.text('3.1 Naklady na pozemek a administrativu:', 25, yPosition);
+            yPosition += 8;
+            doc.text(`   Nakup pozemku: ${formatNumber(costs.land)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Prevodni naklady: ${formatNumber(costs.landTransfer)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Stavebni povoleni: ${formatNumber(costs.buildingPermit)} Kc`, 30, yPosition);
+            yPosition += 5;
+            
+            yPosition += 8;
+            doc.text('3.2 Projektove naklady:', 25, yPosition);
+            yPosition += 8;
+            doc.text(`   Architektonicka studie: ${formatNumber(costs.architecturalStudy)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Projektova dokumentace: ${formatNumber(costs.projectDocumentation)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Inzenyrske site: ${formatNumber(costs.engineeringSystems)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Staticky projekt: ${formatNumber(costs.structuralProject)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Energeticky audit: ${formatNumber(costs.energyAudit)} Kc`, 30, yPosition);
+            yPosition += 5;
+            
+            yPosition += 8;
+            doc.text('3.3 Stavebni naklady:', 25, yPosition);
+            yPosition += 8;
+            doc.text(`   Stavba objektu: ${formatNumber(costs.construction)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Pripojeni IS: ${formatNumber(costs.utilitiesConnection)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Tereni upravy: ${formatNumber(costs.landscaping)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Komunikace: ${formatNumber(costs.communications)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Oploceni: ${formatNumber(costs.fencing)} Kc`, 30, yPosition);
+            yPosition += 5;
+            
+            yPosition += 8;
+            doc.text('3.4 Ostatni naklady:', 25, yPosition);
+            yPosition += 8;
+            doc.text(`   Technicky dozor: ${formatNumber(costs.inspection)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Autorsky dozor: ${formatNumber(costs.supervision)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Marketing: ${formatNumber(costs.marketing)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Financovani: ${formatNumber(costs.financing)} Kc`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`   Rezerva: ${formatNumber(costs.contingency)} Kc`, 30, yPosition);
+            
+            // Cashflow parameters
+            yPosition += 20;
+            doc.setFontSize(16);
+            doc.setTextColor(...primaryColor);
+            doc.text('4. CASOVY HARMONOGRAM A CASHFLOW', 20, yPosition);
+            
+            yPosition += 15;
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            
+            const constructionTime = document.getElementById('constructionTime').value;
+            const salesStart = document.getElementById('salesStart').value;
+            const salesRate = document.getElementById('salesRate').value;
+            const interestRate = document.getElementById('interestRate').value;
+            
+            doc.text(`Doba vystavby: ${constructionTime} mesicu`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Zahajeni prodeje: ${salesStart}. mesic`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Tempo prodeje: ${salesRate} jednotek/mesic`, 25, yPosition);
+            yPosition += 6;
+            doc.text(`Urokova sazba: ${interestRate}%`, 25, yPosition);
+            
+            // Risk assessment with more details
+            yPosition += 20;
+            doc.setFontSize(16);
+            doc.setTextColor(...primaryColor);
+            doc.text('5. HODNOCENI RIZIK', 20, yPosition);
+            
+            yPosition += 15;
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            
+            let riskLevel = "NIZKE";
+            let riskDescription = "";
+            
+            if (profitMargin < 5) {
+                riskLevel = "VYSOKE";
+                riskDescription = "Projekt vykazuje velmi nizkou ziskovou marzi pod 5%, coz predstavuje vysoke financni riziko.";
+            } else if (profitMargin < 10) {
+                riskLevel = "STREDNI";
+                riskDescription = "Ziskova marze pod 10% indikuje stredni riziko. Doporucujeme detailni monitoring nakladu.";
+            } else if (profitMargin < 15) {
+                riskDescription = "Prijatelna ziskova marze s mirnym rizikem. Projekt ma dobre predpoklady pro uspech.";
+            } else {
+                riskDescription = "Vyborne ziskova marze nad 15% indikuje nizke riziko a perspektivni investici.";
+            }
+            
+            doc.text(`Celkove riziko projektu: ${riskLevel}`, 25, yPosition);
+            
+            yPosition += 10;
+            const riskLines = doc.splitTextToSize(riskDescription, 160);
+            doc.text(riskLines, 25, yPosition);
+            yPosition += riskLines.length * 5;
+            
+            // Sensitivity analysis parameters
+            yPosition += 15;
+            doc.setFontSize(12);
+            doc.setTextColor(...secondaryColor);
+            doc.text('Citlivostni analyza:', 25, yPosition);
+            
+            yPosition += 8;
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            
+            const priceChange = document.getElementById('priceChange').value;
+            const costChange = document.getElementById('costChange').value;
+            
+            doc.text(`Zmena cen: ${priceChange}%`, 30, yPosition);
+            yPosition += 5;
+            doc.text(`Zmena nakladu: ${costChange}%`, 30, yPosition);
+            
+            // Recommendations
+            yPosition += 20;
+            doc.setFontSize(16);
+            doc.setTextColor(...primaryColor);
+            doc.text('6. DOPORUCENI', 20, yPosition);
+            
+            yPosition += 15;
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            
+            let recommendations = [];
+            
+            if (profitMargin < 10) {
+                recommendations.push("• Zvazit optimalizaci nakladu nebo zvyseni prodejnich cen");
+                recommendations.push("• Provest detailni analyzu konkurence v oblasti");
+            }
+            
+            const landCosts = costs.land + costs.landTransfer;
+            const landCostPercentage = (landCosts / projectData.totalCosts) * 100;
+            
+            if (landCostPercentage > 30) {
+                recommendations.push("• Naklady na pozemek jsou vysoke - zvazit alternativni lokace");
+            }
+            
+            if (profitMargin > 20) {
+                recommendations.push("• Projekt vykazuje vybornou rentabilitu");
+                recommendations.push("• Doporucujeme pokracovat s realizaci");
+            }
+            
+            recommendations.push("• Pravidelne monitorovat vyvoj trhu a konkurence");
+            recommendations.push("• Zajistit kvalitni marketingovou strategii");
+            recommendations.push("• Dukladne overit vsechny naklady pred zahajenim");
+            
+            recommendations.forEach(rec => {
+                doc.text(rec, 25, yPosition);
+                yPosition += 6;
+            });
+            
+            // Save PDF
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            doc.save(`developmenta-analyza-${timestamp}.pdf`);
+            
+            alert('PDF report byl uspesne vygenerovan a stazen!');
+        }
+
+        // Cashflow calculation
+        function calculateCashflow() {
+            const constructionTime = parseFloat(document.getElementById('constructionTime').value) || 24;
+            const salesStart = parseFloat(document.getElementById('salesStart').value) || 12;
+            const salesRate = parseFloat(document.getElementById('salesRate').value) || 3;
+            const interestRate = parseFloat(document.getElementById('interestRate').value) || 6.5;
+
+            const monthlyInterestRate = interestRate / 100 / 12;
+            const totalUnits = projectData.totalUnits;
+            const avgUnitPrice = totalUnits > 0 ? (projectData.revenues.apartments1kk + projectData.revenues.apartments2kk + projectData.revenues.apartments3kk) / totalUnits : 0;
+
+            let cumulativeCashflow = 0;
+            let maxNegativeCF = 0;
+            let breakEvenMonth = 0;
+            let totalFinancialCosts = 0;
+
+            // Simulate monthly cashflow
+            for (let month = 1; month <= constructionTime + 12; month++) {
+                let monthlyInflow = 0;
+                let monthlyOutflow = 0;
+
+                // Construction costs spread over construction period
+                if (month <= constructionTime) {
+                    monthlyOutflow = projectData.totalCosts / constructionTime;
+                }
+
+                // Sales revenues starting from salesStart month
+                if (month >= salesStart && totalUnits > 0) {
+                    const unitsToSell = Math.min(salesRate, totalUnits - ((month - salesStart) * salesRate));
+                    if (unitsToSell > 0) {
+                        monthlyInflow = unitsToSell * avgUnitPrice;
+                    }
+                }
+
+                const netCashflow = monthlyInflow - monthlyOutflow;
+                cumulativeCashflow += netCashflow;
+
+                // Calculate financing costs on negative balance
+                if (cumulativeCashflow < 0) {
+                    const monthlyFinancingCost = Math.abs(cumulativeCashflow) * monthlyInterestRate;
+                    totalFinancialCosts += monthlyFinancingCost;
+                    cumulativeCashflow -= monthlyFinancingCost;
+                }
+
+                // Track maximum negative cashflow
+                if (cumulativeCashflow < maxNegativeCF) {
+                    maxNegativeCF = cumulativeCashflow;
+                }
+
+                // Find break-even point
+                if (breakEvenMonth === 0 && cumulativeCashflow >= 0) {
+                    breakEvenMonth = month;
+                }
+            }
+
+            // Update display
+            document.getElementById('maxNegativeCF').textContent = formatCurrency(Math.abs(maxNegativeCF));
+            document.getElementById('breakEvenMonth').textContent = breakEvenMonth + ' měsíců';
+            document.getElementById('financialCosts').textContent = formatCurrency(totalFinancialCosts);
+        }
+
+        // Sensitivity analysis
+        function calculateSensitivity() {
+            const priceChange = parseFloat(document.getElementById('priceChange').value) || 0;
+            const costChange = parseFloat(document.getElementById('costChange').value) || 0;
+
+            // Update display values
+            document.getElementById('priceChangeValue').textContent = priceChange + '%';
+            document.getElementById('costChangeValue').textContent = costChange + '%';
+
+            // Calculate adjusted revenues and costs
+            const adjustedRevenues = projectData.totalRevenues * (1 + priceChange / 100);
+            const adjustedCosts = projectData.totalCosts * (1 + costChange / 100);
+
+            // Calculate profits under different scenarios
+            const baseProfitability = projectData.totalRevenues - projectData.totalCosts;
+            const priceChangeProfit = adjustedRevenues - projectData.totalCosts;
+            const costChangeProfit = projectData.totalRevenues - adjustedCosts;
+            const combinedProfit = adjustedRevenues - adjustedCosts;
+
+            // Update sensitivity results
+            document.getElementById('sensitivityPriceProfit').textContent = formatCurrency(priceChangeProfit);
+            document.getElementById('sensitivityCostProfit').textContent = formatCurrency(costChangeProfit);
+            document.getElementById('sensitivityCombinedProfit').textContent = formatCurrency(combinedProfit);
+
+            // Update card colors based on profitability
+            const cards = document.querySelectorAll('#sensitivity .result-card');
+            cards[0].className = 'result-card ' + (priceChangeProfit > baseProfitability ? 'positive' : priceChangeProfit < baseProfitability ? 'negative' : '');
+            cards[1].className = 'result-card ' + (costChangeProfit > baseProfitability ? 'positive' : costChangeProfit < baseProfitability ? 'negative' : '');
+            cards[2].className = 'result-card ' + (combinedProfit > baseProfitability ? 'positive' : combinedProfit < baseProfitability ? 'negative' : '');
+        }
+
+        // Auto-hide navigation functionality
+        let lastScrollTop = 0;
+        let scrollTimeout;
+
+        function handleNavAutoHide() {
+            const header = document.querySelector('.header');
+            const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Clear timeout if it exists
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+            
+            // Show/hide based on scroll direction
+            if (currentScroll > lastScrollTop && currentScroll > 100) {
+                // Scrolling down - hide navbar
+                header.classList.add('hidden');
+            } else {
+                // Scrolling up - show navbar
+                header.classList.remove('hidden');
+            }
+            
+            lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+            
+            // Auto-show navigation after short delay when scrolling stops
+            scrollTimeout = setTimeout(() => {
+                header.classList.remove('hidden');
+            }, 2000);
+        }
+
+        // Add scroll event listener
+        window.addEventListener('scroll', handleNavAutoHide, { passive: true });
+
+        // Show navigation when mouse moves to top of screen
+        document.addEventListener('mousemove', function(e) {
+            if (e.clientY < 50) {
+                document.querySelector('.header').classList.remove('hidden');
+            }
+        });
+
+        // Enhanced scroll to section function with offset for fixed header
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                const headerHeight = document.querySelector('.header').offsetHeight;
+                const offsetTop = section.offsetTop - headerHeight - 20;
+                
+                window.scrollTo({
+                    top: offsetTop,
+                    behavior: 'smooth'
+                });
+                
+                // Update active tab
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelector(`[href="#${sectionId}"]`).classList.add('active');
+            }
+            
+            // Update active link on scroll
+            const sections = document.querySelectorAll('.tab-content');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        document.querySelectorAll('.tab').forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === `#${id}`) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, {
+                rootMargin: '-120px 0px -60% 0px'
+            });
+
+            sections.forEach(section => observer.observe(section));
+        }
+
+        // Initialize calculator on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            calculate();
+        });
+    </script>
+</html>
