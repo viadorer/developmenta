@@ -3,7 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Developmenta - Kalkulačka developerského projektu</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="shortcut icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <!-- SEO Meta Tags -->
+    <title>Developmenta - Profesionální kalkulačka developerského projektu | David Choc</title>
+    <meta name="description" content="Pokročilá kalkulačka pro výpočet ziskovosti developerských projektů. Kompletní finanční analýza, cash flow, ROI a exporty do PDF. Nástroj od PTF Reality s.r.o.">
+    <meta name="keywords" content="developerský projekt, kalkulačka, ROI, cash flow, real estate, nemovitosti, development, ziskovost, finanční analýza, PTF Reality, David Choc">
+    <meta name="author" content="Bc. David Choc, PTF Reality s.r.o.">
+    <meta name="language" content="cs">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://davidchoc.cz/developmenta">
+    <meta property="og:title" content="Developmenta - Profesionální kalkulačka developerského projektu">
+    <meta property="og:description" content="Pokročilá kalkulačka pro výpočet ziskovosti developerských projektů s kompletní finanční analýzou a export do PDF.">
+    <meta property="og:image" content="icon.png">
+    <meta property="og:locale" content="cs_CZ">
+    <meta property="og:site_name" content="Developmenta">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://davidchoc.cz/developmenta">
+    <meta property="twitter:title" content="Developmenta - Profesionální kalkulačka developerského projektu">
+    <meta property="twitter:description" content="Pokročilá kalkulačka pro výpočet ziskovosti developerských projektů s kompletní finanční analýzou a export do PDF.">
+    <meta property="twitter:image" content="icon.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://davidchoc.cz/developmenta">
+    
+    <!-- External Resources -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2014,11 +2047,44 @@
                     return;
                 }
                 
-                const doc = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                const doc = new window.jspdf.jsPDF({
+                    orientation: 'p',
+                    unit: 'mm', 
+                    format: 'a4',
+                    putOnlyUsedFonts: true,
+                    compress: true
+                });
                 
-                // Use built-in fonts instead of external loading (more reliable)
+                // Czech character mapping function for PDF compatibility
+                function fixCzechText(text) {
+                    if (typeof text !== 'string') return text;
+                    
+                    const charMap = {
+                        'á': 'a', 'č': 'c', 'ď': 'd', 'é': 'e', 'ě': 'e',
+                        'í': 'i', 'ň': 'n', 'ó': 'o', 'ř': 'r', 'š': 's',
+                        'ť': 't', 'ú': 'u', 'ů': 'u', 'ý': 'y', 'ž': 'z',
+                        'Á': 'A', 'Č': 'C', 'Ď': 'D', 'É': 'E', 'Ě': 'E',
+                        'Í': 'I', 'Ň': 'N', 'Ó': 'O', 'Ř': 'R', 'Š': 'S',
+                        'Ť': 'T', 'Ú': 'U', 'Ů': 'U', 'Ý': 'Y', 'Ž': 'Z'
+                    };
+                    
+                    return text.replace(/[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/g, char => charMap[char] || char);
+                }
+                
+                // Override doc.text to automatically fix Czech characters
+                const originalText = doc.text;
+                doc.text = function(text, x, y, options) {
+                    if (typeof text === 'string') {
+                        text = fixCzechText(text);
+                    } else if (Array.isArray(text)) {
+                        text = text.map(line => fixCzechText(line));
+                    }
+                    return originalText.call(this, text, x, y, options);
+                };
+                
+                // Use helvetica font with normal style
                 try {
-                    doc.setFont('helvetica');
+                    doc.setFont('helvetica', 'normal');
                 } catch (fontError) {
                     console.warn('Font setting failed, using default:', fontError);
                 }
@@ -2404,20 +2470,20 @@
             
             // Marketing content
             const marketingText = [
-                'Jmenuji se Bc. David Choc a s realitní kanceláří PTF Reality, s.r.o. nabízíme',
-                'komplexní řešení pro úspěšný prodej a realizaci developerských projektů.',
-                'Využijte našich dlouholetých zkušeností v realitách od roku 1995',
-                'k maximalizaci zisku a bezproblémovému průběhu vašeho projektu.',
+                'Jmenuji se Bc. David Choc a s realitni kancelari PTF Reality, s.r.o. nabizime',
+                'komplexni reseni pro uspesny prodej a realizaci developerskych projektu.',
+                'Vyuzijte nasich dlouholetych zkusenosti v realitach od roku 1995',
+                'k maximalizaci zisku a bezproblemovemu prubehu vaseho projektu.',
                 '',
-                'Kontaktujte nás pro nezávaznou konzultaci a najděte optimální',
-                'cestu k úspěchu:'
+                'Kontaktujte nas pro nezavaznou konzultaci a najdete optimalni cestu',
+                'k uspechu:'
             ];
             
             marketingText.forEach(line => {
                 if (line === '') {
                     yPosition += 6;
                 } else {
-                    doc.text(line, 105, yPosition, { align: 'center' });
+                    doc.text(line, 25, yPosition);
                     yPosition += 6;
                 }
             });
@@ -2426,20 +2492,20 @@
             yPosition += 15;
             doc.setFontSize(14);
             doc.setTextColor(...primaryColor);
-            doc.text('Bc. David Choc', 105, yPosition, { align: 'center' });
+            doc.text('Bc. David Choc', 25, yPosition);
             
             yPosition += 10;
             doc.setFontSize(11);
             doc.setTextColor(0, 0, 0);
             
             const contactInfo = [
-                'Tel: [Vložte vaše telefonní číslo]',
-                'Email: [Vložte váš email]',
+                'Tel: [Vlozte vase telefonni cislo]',
+                'Email: [Vlozte vas email]',
                 'Web: www.davidchoc.cz | www.ptf.cz'
             ];
             
             contactInfo.forEach(contact => {
-                doc.text(contact, 105, yPosition, { align: 'center' });
+                doc.text(contact, 25, yPosition);
                 yPosition += 7;
             });
             
@@ -2447,8 +2513,8 @@
             yPosition += 20;
             doc.setFontSize(10);
             doc.setTextColor(100, 100, 100);
-            doc.text('[LOGO DAVID CHOC]', 70, yPosition, { align: 'center' });
-            doc.text('[LOGO PTF REALITY]', 140, yPosition, { align: 'center' });
+            doc.text('[LOGO DAVID CHOC]', 25, yPosition);
+            doc.text('[LOGO PTF REALITY]', 110, yPosition);
             
             // Disclaimer section
             yPosition += 30;
@@ -2461,27 +2527,28 @@
             doc.setTextColor(0, 0, 0);
             
             const disclaimerText = [
-                'Tato analýza developerského projektu byla připravena na základě dostupných',
-                'informací a dat k datu 15. 7. 2025. Veškeré údaje, včetně finančních prognóz',
-                'a odhadů, jsou indikativní a slouží pouze pro informační účely.',
+                'Tato analyza developerskeho projektu byla pripravena na zaklade',
+                'dostupnych informaci a dat k datu 15. 7. 2025. Vsekere udaje, vcetne',
+                'financnich prognoz a odhadu, jsou indikativni a slouzi pouze pro',
+                'informacni ucely.',
                 '',
-                'Nejedná se o závaznou nabídku ani finanční poradenství. Skutečné výsledky',
-                'se mohou lišit v závislosti na tržních podmínkách, průběhu projektu',
-                'a dalších faktorech.',
+                'Nejedna se o zavaznou nabidku ani financni poradenstvi. Skutecne',
+                'vysledky se mohou lisit v zavislosti na trznich podminkach, prubehu',
+                'projektu a dalsich faktorech.',
                 '',
-                'Doporučujeme provést vlastní due diligence a vyhledat nezávislé odborné',
-                'poradenství před jakýmkoli investičním rozhodnutím.',
+                'Doporucujeme provest vlastni due diligence a vyhledat nezavisle',
+                'odberne poradenstvi pred jakymkoli investicnim rozhodnutim.',
                 '',
-                'PTF Reality s.r.o. ani David Choc nenesou odpovědnost za jakékoli ztráty',
-                'nebo škody vzniklé na základě spoléhání se na informace obsažené',
-                'v této analýze.'
+                'PTF Reality s.r.o. ani David Choc nenesou odpovednost za jakekoli',
+                'ztraty nebo skody vznikle na zaklade spolehani se na informace',
+                'obsazene v teto analyze.'
             ];
             
             disclaimerText.forEach(line => {
                 if (line === '') {
                     yPosition += 4;
                 } else {
-                    doc.text(line, 105, yPosition, { align: 'center' });
+                    doc.text(line, 25, yPosition);
                     yPosition += 5;
                 }
             });
