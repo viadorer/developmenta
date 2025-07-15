@@ -261,13 +261,13 @@
             padding: 16px;
             text-align: left;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            color: #000000;
+            color: #ffffff;
         }
 
         .cost-table th, .revenue-table th {
             background: rgba(255, 255, 255, 0.1);
             font-weight: 600;
-            color: #000000;
+            color: #ffffff;
         }
 
         .cost-table input, .revenue-table input {
@@ -296,7 +296,7 @@
             transition: all 0.3s ease;
         }
 
-        .result-card h3 {
+        .result-card h3, .result-card h4 {
             margin: 0 0 12px 0;
             font-size: 16px;
             font-weight: 600;
@@ -357,6 +357,23 @@
             color: #ffffff;
         }
 
+        /* Guide Section - Light Background with Black Text */
+        #guide .summary-section {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        #guide .summary-section h3,
+        #guide .summary-section h4,
+        #guide .summary-section p,
+        #guide .summary-section ul,
+        #guide .summary-section li,
+        #guide .summary-section strong {
+            color: #000000;
+        }
+
         /* Glass Tables */
         .table-container {
             background: rgba(255, 255, 255, 0.06);
@@ -377,12 +394,12 @@
             padding: 16px 20px;
             text-align: left;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            color: #000000;
+            color: #ffffff;
         }
 
         th {
-            background: rgba(255, 255, 255, 0.08);
-            color: #000000;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
             font-weight: 600;
             font-size: 14px;
             text-transform: uppercase;
@@ -390,7 +407,7 @@
         }
 
         td {
-            color: #000000;
+            color: #ffffff;
             font-variant-numeric: tabular-nums;
         }
 
@@ -420,7 +437,7 @@
         }
 
         .control-group label {
-            color: #000000;
+            color: #ffffff;
             font-size: 14px;
             font-weight: 500;
         }
@@ -470,16 +487,23 @@
             text-align: right;
             font-weight: 600;
             font-family: 'Courier New', monospace;
-            color: #000000;
+            color: #ffffff;
         }
 
-        .risk-low { color: #059669; font-weight: 600; }
-        .risk-medium { color: #d97706; font-weight: 600; }
-        .risk-high { color: #dc2626; font-weight: 600; }
+.risk-low { 
+    color: #059669; 
+    font-weight: 600; 
+}
 
-        .summary-section table tr:hover {
-            background: rgba(102, 126, 234, 0.05);
-        }
+.risk-medium { 
+    color: #d97706; 
+    font-weight: 600; 
+}
+
+.risk-high { 
+    color: #dc2626; 
+    font-weight: 600; 
+}
 
         .risk-item {
             background: white;
@@ -687,8 +711,9 @@
             
             <div class="nav-actions">
                 <button class="action-btn-circle" onclick="saveProject()" title="Uložit projekt">💾</button>
-                <button class="action-btn-circle" onclick="loadProject()" title="Načíst projekt">📁</button>
+                <button class="action-btn-circle" onclick="document.getElementById('fileInput').click()" title="Načíst projekt">📁</button>
                 <button class="action-btn-circle" onclick="exportToPDF()" title="Export do PDF">📄</button>
+                <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="loadProject(event)">
             </div>
         </nav>
     </header>
@@ -702,11 +727,16 @@
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
+                        <label>Lokalita projektu</label>
+                        <input type="text" id="projectLocation" placeholder="Zadejte adresu nebo místo" autocomplete="off">
+                        <div id="locationSuggestions" style="display: none; position: absolute; z-index: 1000; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 200px; overflow-y: auto; width: 100%; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"></div>
+                    </div>
+                    <div class="form-group">
                         <label>Výměra pozemku (m²)</label>
                         <input type="number" id="landArea" value="1500" oninput="calculate()">
                     </div>
                     <div class="form-group">
-                        <label>Kupní cena pozemku (Kč)</label>
+                        <label>Cena pozemku (Kč)</label>
                         <input type="number" id="landPrice" value="25000000" oninput="calculate()">
                     </div>
                     <div class="form-group">
@@ -1028,16 +1058,16 @@
                 <div class="summary-section">
                     <div class="result-cards">
                         <div class="result-card positive">
-                            <h4>Celkové příjmy</h4>
-                            <p class="value" id="totalRevenues">0 Kč</p>
+                            <h4 style="color: #000000;">Celkové příjmy</h4>
+                            <p class="value" id="totalRevenues" style="color: #000000;">0 Kč</p>
                         </div>
                         <div class="result-card positive">
-                            <h4>Průměrná cena za m²</h4>
-                            <p class="value" id="avgPricePerSqm">0 Kč/m²</p>
+                            <h4 style="color: #000000;">Průměrná cena za m²</h4>
+                            <p class="value" id="avgPricePerSqm" style="color: #000000;">0 Kč/m²</p>
                         </div>
                         <div class="result-card positive">
-                            <h4>Příjem na bytovou jednotku</h4>
-                            <p class="value" id="revenuePerUnit">0 Kč/bj</p>
+                            <h4 style="color: #000000;">Příjem na bytovou jednotku</h4>
+                            <p class="value" id="revenuePerUnit" style="color: #000000;">0 Kč/bj</p>
                         </div>
                     </div>
                 </div>
@@ -1068,15 +1098,15 @@
                     </div>
                 </div>
                 
-                <div class="summary-section">
-                    <h3>Souhrn projektu</h3>
+                <div class="summary-section" style="color: #000000; background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                    <h3 style="color: #000000;">Souhrn projektu</h3>
                     <table>
-                        <tr><td><strong>Celkové příjmy:</strong></td><td class="number" id="summaryRevenues">0 Kč</td></tr>
-                        <tr><td><strong>Celkové náklady:</strong></td><td class="number" id="summaryCosts">0 Kč</td></tr>
-                        <tr><td><strong>Hrubý zisk:</strong></td><td class="number" id="summaryProfit">0 Kč</td></tr>
-                        <tr><td><strong>Zisková marže:</strong></td><td class="number" id="summaryMargin">0%</td></tr>
-                        <tr><td><strong>Prodejní plocha celkem:</strong></td><td class="number" id="summaryArea">0 m²</td></tr>
-                        <tr><td><strong>Tržba za m²:</strong></td><td class="number" id="summaryPriceM2">0 Kč/m²</td></tr>
+                        <tr><td style="color: #000000;"><strong style="color: #000000;">Celkové příjmy:</strong></td><td class="number" id="summaryRevenues" style="color: #000000;">0 Kč</td></tr>
+                        <tr><td style="color: #000000;"><strong style="color: #000000;">Celkové náklady:</strong></td><td class="number" id="summaryCosts" style="color: #000000;">0 Kč</td></tr>
+                        <tr><td style="color: #000000;"><strong style="color: #000000;">Hrubý zisk:</strong></td><td class="number" id="summaryProfit" style="color: #000000;">0 Kč</td></tr>
+                        <tr><td style="color: #000000;"><strong style="color: #000000;">Zisková marže:</strong></td><td class="number" id="summaryMargin" style="color: #000000;">0%</td></tr>
+                        <tr><td style="color: #000000;"><strong style="color: #000000;">Prodejní plocha celkem:</strong></td><td class="number" id="summaryArea" style="color: #000000;">0 m²</td></tr>
+                        <tr><td style="color: #000000;"><strong style="color: #000000;">Tržba za m²:</strong></td><td class="number" id="summaryPriceM2" style="color: #000000;">0 Kč/m²</td></tr>
                     </table>
                 </div>
             </div>
@@ -1109,16 +1139,16 @@
                 <div class="summary-section">
                     <div class="result-cards">
                         <div class="result-card">
-                            <h4>Maximální negativní CF</h4>
-                            <p class="value" id="maxNegativeCF">0 Kč</p>
+                            <h4 style="color: #000000;">Maximální negativní CF</h4>
+                            <p class="value" id="maxNegativeCF" style="color: #000000;">0 Kč</p>
                         </div>
                         <div class="result-card">
-                            <h4>Bod zvratu (měsíc)</h4>
-                            <p class="value" id="breakEvenMonth">0</p>
+                            <h4 style="color: #000000;">Bod zvratu (měsíc)</h4>
+                            <p class="value" id="breakEvenMonth" style="color: #000000;">0</p>
                         </div>
                         <div class="result-card">
-                            <h4>Finanční náklady</h4>
-                            <p class="value" id="financialCosts">0 Kč</p>
+                            <h4 style="color: #000000;">Finanční náklady</h4>
+                            <p class="value" id="financialCosts" style="color: #000000;">0 Kč</p>
                         </div>
                     </div>
                 </div>
@@ -1340,7 +1370,129 @@
     </div>
 </body>
 
+    <!-- Mapy.cz API Script -->
     <script>
+        // Funkce pro našeptávač lokací
+        function initLocationSuggestions() {
+            const locationInput = document.getElementById('projectLocation');
+            const suggestionsList = document.getElementById('locationSuggestions');
+            
+            if (!locationInput || !suggestionsList) {
+                console.error('Elementy pro našeptávač nebyly nalezeny');
+                return;
+            }
+            
+            locationInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (query.length < 2) {
+                    suggestionsList.style.display = 'none';
+                    return;
+                }
+                
+                // Volání API pro našeptávání - použití standardního Mapy.cz API
+                const apiUrl = `https://api.mapy.cz/geocode?query=${encodeURIComponent(query)}&limit=5&apikey=MTIdGpXVtxteHwipIwRw1MyH8f4IWYNgTyppp75Vp54`;
+                
+                fetch(apiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        suggestionsList.innerHTML = '';
+                        
+                        if (data && data.items && data.items.length > 0) {
+                            data.items.forEach(item => {
+                                const suggestionItem = document.createElement('div');
+                                suggestionItem.className = 'suggestion-item';
+                                suggestionItem.style.padding = '10px';
+                                suggestionItem.style.borderBottom = '1px solid #eee';
+                                suggestionItem.style.cursor = 'pointer';
+                                suggestionItem.textContent = item.name || item.label || item.title;
+                                
+                                suggestionItem.addEventListener('mouseenter', function() {
+                                    this.style.backgroundColor = '#f5f5f5';
+                                });
+                                
+                                suggestionItem.addEventListener('mouseleave', function() {
+                                    this.style.backgroundColor = 'white';
+                                });
+                                
+                                suggestionItem.addEventListener('click', function() {
+                                    locationInput.value = item.name || item.label || item.title;
+                                    suggestionsList.style.display = 'none';
+                                });
+                                
+                                suggestionsList.appendChild(suggestionItem);
+                            });
+                            
+                            suggestionsList.style.display = 'block';
+                        } else {
+                            // Alternativní endpoint, pokud první selže
+                            fetch(`https://api.mapy.cz/suggest?phrase=${encodeURIComponent(query)}&count=5&apikey=MTIdGpXVtxteHwipIwRw1MyH8f4IWYNgTyppp75Vp54`)
+                                .then(response => response.json())
+                                .then(altData => {
+                                    suggestionsList.innerHTML = '';
+                                    
+                                    if (altData && altData.result && altData.result.length > 0) {
+                                        altData.result.forEach(item => {
+                                            const suggestionItem = document.createElement('div');
+                                            suggestionItem.className = 'suggestion-item';
+                                            suggestionItem.style.padding = '10px';
+                                            suggestionItem.style.borderBottom = '1px solid #eee';
+                                            suggestionItem.style.cursor = 'pointer';
+                                            suggestionItem.textContent = item.text || item.title;
+                                            
+                                            suggestionItem.addEventListener('mouseenter', function() {
+                                                this.style.backgroundColor = '#f5f5f5';
+                                            });
+                                            
+                                            suggestionItem.addEventListener('mouseleave', function() {
+                                                this.style.backgroundColor = 'white';
+                                            });
+                                            
+                                            suggestionItem.addEventListener('click', function() {
+                                                locationInput.value = item.text || item.title;
+                                                suggestionsList.style.display = 'none';
+                                            });
+                                            
+                                            suggestionsList.appendChild(suggestionItem);
+                                        });
+                                        
+                                        suggestionsList.style.display = 'block';
+                                    } else {
+                                        suggestionsList.style.display = 'none';
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Chyba při načítání alternativního našeptávače:', error);
+                                    suggestionsList.style.display = 'none';
+                                });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Chyba při načítání našeptávače:', error);
+                        suggestionsList.style.display = 'none';
+                    });
+            });
+            
+            // Skrytí našeptávače při kliknutí mimo
+            document.addEventListener('click', function(e) {
+                if (e.target !== locationInput && e.target !== suggestionsList) {
+                    suggestionsList.style.display = 'none';
+                }
+            });
+        }
+        
+        // Inicializace našeptávače ihned
+        window.addEventListener('load', function() {
+            initLocationSuggestions();
+        });
+        
+        // Záložní inicializace
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            setTimeout(initLocationSuggestions, 1);
+        } else {
+            document.addEventListener('DOMContentLoaded', initLocationSuggestions);
+        }
+
         // Global project data
         let projectData = {
             costs: {},
@@ -1846,12 +1998,18 @@
 
         // Export to PDF with comprehensive analysis
         function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
-            
-            // Add Czech font support
-            doc.addFont('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2', 'Roboto', 'normal');
-            doc.setFont('Roboto');
+            try {
+                // Správné použití knihovny jsPDF
+                if (!window.jspdf) {
+                    alert('Knihovna jsPDF není načtena. Zkontrolujte připojení k internetu.');
+                    return;
+                }
+                
+                const doc = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                
+                // Add Czech font support
+                doc.addFont('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2', 'Roboto', 'normal');
+                doc.setFont('Roboto');
             
             // Professional blue color palette
             const primaryColor = [25, 118, 210]; // Professional blue
@@ -2201,6 +2359,9 @@
             doc.save(`developmenta-analyza-${timestamp}.pdf`);
             
             alert('PDF report byl uspesne vygenerovan a stazen!');
+            } catch (error) {
+                alert('Chyba při exportu do PDF: ' + error.message);
+            }
         }
 
         // Cashflow calculation
