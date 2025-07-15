@@ -2005,11 +2005,23 @@
                     return;
                 }
                 
+                // Ensure all calculations are up to date
+                calculate();
+                
+                // Check if projectData exists and is valid
+                if (!projectData || !projectData.totalCosts || !projectData.totalRevenues) {
+                    alert('Nejdříve proveďte výpočet projektu před exportem do PDF.');
+                    return;
+                }
+                
                 const doc = new window.jspdf.jsPDF('p', 'mm', 'a4');
                 
-                // Add Czech font support
-                doc.addFont('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2', 'Roboto', 'normal');
-                doc.setFont('Roboto');
+                // Use built-in fonts instead of external loading (more reliable)
+                try {
+                    doc.setFont('helvetica');
+                } catch (fontError) {
+                    console.warn('Font setting failed, using default:', fontError);
+                }
             
             // Professional blue color palette
             const primaryColor = [25, 118, 210]; // Professional blue
@@ -2043,15 +2055,16 @@
             doc.setFontSize(11);
             doc.setTextColor(0, 0, 0);
             
-            const landArea = document.getElementById('landArea').value;
-            const landPrice = document.getElementById('landPrice').value;
-            const buildingCoeff = document.getElementById('buildingCoeff').value;
-            const maxFloors = document.getElementById('maxFloors').value;
-            const totalGFA = document.getElementById('totalGFA').value;
-            const buildingStandard = document.getElementById('buildingStandard').value;
-            const utilitiesConnection = document.getElementById('utilitiesConnection').value;
-            const geologicalConditions = document.getElementById('geologicalConditions').value;
-            const totalUnits = projectData.totalUnits;
+            // Safely get input values with fallbacks
+            const landArea = document.getElementById('landArea')?.value || '0';
+            const landPrice = document.getElementById('landPrice')?.value || '0';
+            const buildingCoeff = document.getElementById('buildingCoeff')?.value || '0';
+            const maxFloors = document.getElementById('maxFloors')?.value || '0';
+            const totalGFA = document.getElementById('totalGFA')?.value || '0';
+            const buildingStandard = document.getElementById('buildingStandard')?.value || 'Není specifikováno';
+            const utilitiesConnection = document.getElementById('utilitiesConnection')?.value || 'Není specifikováno';
+            const geologicalConditions = document.getElementById('geologicalConditions')?.value || 'Není specifikováno';
+            const totalUnits = projectData.totalUnits || 0;
             
             doc.text(`Vymera pozemku: ${formatNumber(landArea)} m2`, 25, yPosition);
             yPosition += 6;
@@ -2081,15 +2094,15 @@
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
             
-            const units1kk = document.getElementById('units1kk').value;
-            const area1kk = document.getElementById('area1kk').value;
-            const units2kk = document.getElementById('units2kk').value;
-            const area2kk = document.getElementById('area2kk').value;
-            const units3kk = document.getElementById('units3kk').value;
-            const area3kk = document.getElementById('area3kk').value;
-            const parkingSpaces = document.getElementById('parkingSpaces').value;
-            const cellars = document.getElementById('cellars').value;
-            const cellarArea = document.getElementById('cellarArea').value;
+            const units1kk = document.getElementById('units1kk')?.value || '0';
+            const area1kk = document.getElementById('area1kk')?.value || '0';
+            const units2kk = document.getElementById('units2kk')?.value || '0';
+            const area2kk = document.getElementById('area2kk')?.value || '0';
+            const units3kk = document.getElementById('units3kk')?.value || '0';
+            const area3kk = document.getElementById('area3kk')?.value || '0';
+            const parkingSpaces = document.getElementById('parkingSpaces')?.value || '0';
+            const cellars = document.getElementById('cellars')?.value || '0';
+            const cellarArea = document.getElementById('cellarArea')?.value || '0';
             
             doc.text(`1+kk: ${units1kk} jednotek, prumerna plocha ${area1kk} m2`, 30, yPosition);
             yPosition += 5;
@@ -2136,11 +2149,11 @@
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
             
-            const price1kk = document.getElementById('price1kk').value;
-            const price2kk = document.getElementById('price2kk').value;
-            const price3kk = document.getElementById('price3kk').value;
-            const parkingPrice = document.getElementById('parkingPrice').value;
-            const cellarPrice = document.getElementById('cellarPrice').value;
+            const price1kk = document.getElementById('price1kk')?.value || '0';
+            const price2kk = document.getElementById('price2kk')?.value || '0';
+            const price3kk = document.getElementById('price3kk')?.value || '0';
+            const parkingPrice = document.getElementById('parkingPrice')?.value || '0';
+            const cellarPrice = document.getElementById('cellarPrice')?.value || '0';
             
             doc.text(`1+kk: ${formatNumber(price1kk)} Kc/m2`, 30, yPosition);
             yPosition += 5;
@@ -2192,57 +2205,79 @@
             doc.setTextColor(0, 0, 0);
             
             // Cost breakdown with ALL parameters
-            const costs = projectData.costs;
+            const costs = projectData.costs || {};
+            
+            // Ensure all cost properties exist with fallbacks
+            const safeCosts = {
+                land: costs.land || 0,
+                landTransfer: costs.landTransfer || 0,
+                buildingPermit: costs.buildingPermit || 0,
+                architecturalStudy: costs.architecturalStudy || 0,
+                projectDocumentation: costs.projectDocumentation || 0,
+                engineeringSystems: costs.engineeringSystems || 0,
+                structuralProject: costs.structuralProject || 0,
+                energyAudit: costs.energyAudit || 0,
+                construction: costs.construction || 0,
+                utilitiesConnection: costs.utilitiesConnection || 0,
+                landscaping: costs.landscaping || 0,
+                communications: costs.communications || 0,
+                fencing: costs.fencing || 0,
+                inspection: costs.inspection || 0,
+                supervision: costs.supervision || 0,
+                marketing: costs.marketing || 0,
+                financing: costs.financing || 0,
+                contingency: costs.contingency || 0
+            };
             
             doc.text('3.1 Naklady na pozemek a administrativu:', 25, yPosition);
             yPosition += 8;
-            doc.text(`   Nakup pozemku: ${formatNumber(costs.land)} Kc`, 30, yPosition);
+            doc.text(`   Nakup pozemku: ${formatNumber(safeCosts.land)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Prevodni naklady: ${formatNumber(costs.landTransfer)} Kc`, 30, yPosition);
+            doc.text(`   Prevodni naklady: ${formatNumber(safeCosts.landTransfer)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Stavebni povoleni: ${formatNumber(costs.buildingPermit)} Kc`, 30, yPosition);
+            doc.text(`   Stavebni povoleni: ${formatNumber(safeCosts.buildingPermit)} Kc`, 30, yPosition);
             yPosition += 5;
             
             yPosition += 8;
             doc.text('3.2 Projektove naklady:', 25, yPosition);
             yPosition += 8;
-            doc.text(`   Architektonicka studie: ${formatNumber(costs.architecturalStudy)} Kc`, 30, yPosition);
+            doc.text(`   Architektonicka studie: ${formatNumber(safeCosts.architecturalStudy)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Projektova dokumentace: ${formatNumber(costs.projectDocumentation)} Kc`, 30, yPosition);
+            doc.text(`   Projektova dokumentace: ${formatNumber(safeCosts.projectDocumentation)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Inzenyrske site: ${formatNumber(costs.engineeringSystems)} Kc`, 30, yPosition);
+            doc.text(`   Inzenyrske site: ${formatNumber(safeCosts.engineeringSystems)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Staticky projekt: ${formatNumber(costs.structuralProject)} Kc`, 30, yPosition);
+            doc.text(`   Staticky projekt: ${formatNumber(safeCosts.structuralProject)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Energeticky audit: ${formatNumber(costs.energyAudit)} Kc`, 30, yPosition);
+            doc.text(`   Energeticky audit: ${formatNumber(safeCosts.energyAudit)} Kc`, 30, yPosition);
             yPosition += 5;
             
             yPosition += 8;
             doc.text('3.3 Stavebni naklady:', 25, yPosition);
             yPosition += 8;
-            doc.text(`   Stavba objektu: ${formatNumber(costs.construction)} Kc`, 30, yPosition);
+            doc.text(`   Stavba objektu: ${formatNumber(safeCosts.construction)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Pripojeni IS: ${formatNumber(costs.utilitiesConnection)} Kc`, 30, yPosition);
+            doc.text(`   Pripojeni IS: ${formatNumber(safeCosts.utilitiesConnection)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Tereni upravy: ${formatNumber(costs.landscaping)} Kc`, 30, yPosition);
+            doc.text(`   Tereni upravy: ${formatNumber(safeCosts.landscaping)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Komunikace: ${formatNumber(costs.communications)} Kc`, 30, yPosition);
+            doc.text(`   Komunikace: ${formatNumber(safeCosts.communications)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Oploceni: ${formatNumber(costs.fencing)} Kc`, 30, yPosition);
+            doc.text(`   Oploceni: ${formatNumber(safeCosts.fencing)} Kc`, 30, yPosition);
             yPosition += 5;
             
             yPosition += 8;
             doc.text('3.4 Ostatni naklady:', 25, yPosition);
             yPosition += 8;
-            doc.text(`   Technicky dozor: ${formatNumber(costs.inspection)} Kc`, 30, yPosition);
+            doc.text(`   Technicky dozor: ${formatNumber(safeCosts.inspection)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Autorsky dozor: ${formatNumber(costs.supervision)} Kc`, 30, yPosition);
+            doc.text(`   Autorsky dozor: ${formatNumber(safeCosts.supervision)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Marketing: ${formatNumber(costs.marketing)} Kc`, 30, yPosition);
+            doc.text(`   Marketing: ${formatNumber(safeCosts.marketing)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Financovani: ${formatNumber(costs.financing)} Kc`, 30, yPosition);
+            doc.text(`   Financovani: ${formatNumber(safeCosts.financing)} Kc`, 30, yPosition);
             yPosition += 5;
-            doc.text(`   Rezerva: ${formatNumber(costs.contingency)} Kc`, 30, yPosition);
+            doc.text(`   Rezerva: ${formatNumber(safeCosts.contingency)} Kc`, 30, yPosition);
             
             // Cashflow parameters
             yPosition += 20;
@@ -2254,10 +2289,10 @@
             doc.setFontSize(11);
             doc.setTextColor(0, 0, 0);
             
-            const constructionTime = document.getElementById('constructionTime').value;
-            const salesStart = document.getElementById('salesStart').value;
-            const salesRate = document.getElementById('salesRate').value;
-            const interestRate = document.getElementById('interestRate').value;
+            const constructionTime = document.getElementById('constructionTime')?.value || '24';
+            const salesStart = document.getElementById('salesStart')?.value || '12';
+            const salesRate = document.getElementById('salesRate')?.value || '3';
+            const interestRate = document.getElementById('interestRate')?.value || '6.5';
             
             doc.text(`Doba vystavby: ${constructionTime} mesicu`, 25, yPosition);
             yPosition += 6;
@@ -2309,8 +2344,8 @@
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
             
-            const priceChange = document.getElementById('priceChange').value;
-            const costChange = document.getElementById('costChange').value;
+            const priceChange = document.getElementById('priceChange')?.value || '0';
+            const costChange = document.getElementById('costChange')?.value || '0';
             
             doc.text(`Zmena cen: ${priceChange}%`, 30, yPosition);
             yPosition += 5;
@@ -2354,13 +2389,111 @@
                 yPosition += 6;
             });
             
+            // Add new page for marketing section
+            doc.addPage();
+            yPosition = 20;
+            
+            // Marketing Header
+            doc.setFontSize(18);
+            doc.setTextColor(...primaryColor);
+            doc.text('ŘEŠÍTE PRODEJ VAŠEHO DEVELOPERSKÉHO PROJEKTU?', 105, yPosition, { align: 'center' });
+            
+            yPosition += 20;
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            
+            // Marketing content
+            const marketingText = [
+                'Jmenuji se Bc. David Choc a s realitní kanceláří PTF Reality, s.r.o. nabízíme',
+                'komplexní řešení pro úspěšný prodej a realizaci developerských projektů.',
+                'Využijte našich dlouholetých zkušeností v realitách od roku 1995',
+                'k maximalizaci zisku a bezproblémovému průběhu vašeho projektu.',
+                '',
+                'Kontaktujte nás pro nezávaznou konzultaci a najděte optimální',
+                'cestu k úspěchu:'
+            ];
+            
+            marketingText.forEach(line => {
+                if (line === '') {
+                    yPosition += 6;
+                } else {
+                    doc.text(line, 105, yPosition, { align: 'center' });
+                    yPosition += 6;
+                }
+            });
+            
+            // Contact information
+            yPosition += 15;
+            doc.setFontSize(14);
+            doc.setTextColor(...primaryColor);
+            doc.text('Bc. David Choc', 105, yPosition, { align: 'center' });
+            
+            yPosition += 10;
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            
+            const contactInfo = [
+                'Tel: [Vložte vaše telefonní číslo]',
+                'Email: [Vložte váš email]',
+                'Web: www.davidchoc.cz | www.ptf.cz'
+            ];
+            
+            contactInfo.forEach(contact => {
+                doc.text(contact, 105, yPosition, { align: 'center' });
+                yPosition += 7;
+            });
+            
+            // Logo placeholders (since we can't easily embed images in jsPDF without base64)
+            yPosition += 20;
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text('[LOGO DAVID CHOC]', 70, yPosition, { align: 'center' });
+            doc.text('[LOGO PTF REALITY]', 140, yPosition, { align: 'center' });
+            
+            // Disclaimer section
+            yPosition += 30;
+            doc.setFontSize(14);
+            doc.setTextColor(...secondaryColor);
+            doc.text('DISCLAIMER', 105, yPosition, { align: 'center' });
+            
+            yPosition += 15;
+            doc.setFontSize(9);
+            doc.setTextColor(0, 0, 0);
+            
+            const disclaimerText = [
+                'Tato analýza developerského projektu byla připravena na základě dostupných',
+                'informací a dat k datu 15. 7. 2025. Veškeré údaje, včetně finančních prognóz',
+                'a odhadů, jsou indikativní a slouží pouze pro informační účely.',
+                '',
+                'Nejedná se o závaznou nabídku ani finanční poradenství. Skutečné výsledky',
+                'se mohou lišit v závislosti na tržních podmínkách, průběhu projektu',
+                'a dalších faktorech.',
+                '',
+                'Doporučujeme provést vlastní due diligence a vyhledat nezávislé odborné',
+                'poradenství před jakýmkoli investičním rozhodnutím.',
+                '',
+                'PTF Reality s.r.o. ani David Choc nenesou odpovědnost za jakékoli ztráty',
+                'nebo škody vzniklé na základě spoléhání se na informace obsažené',
+                'v této analýze.'
+            ];
+            
+            disclaimerText.forEach(line => {
+                if (line === '') {
+                    yPosition += 4;
+                } else {
+                    doc.text(line, 105, yPosition, { align: 'center' });
+                    yPosition += 5;
+                }
+            });
+            
             // Save PDF
             const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
             doc.save(`developmenta-analyza-${timestamp}.pdf`);
             
             alert('PDF report byl uspesne vygenerovan a stazen!');
             } catch (error) {
-                alert('Chyba při exportu do PDF: ' + error.message);
+                console.error('PDF Export Error Details:', error);
+                alert('Chyba při exportu do PDF: ' + error.message + '\n\nPokud problém přetrvává, zkontrolujte zda jsou vyplněny všechny povinné údaje v kalkulačce.');
             }
         }
 
